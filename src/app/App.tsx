@@ -137,6 +137,7 @@ export default function App() {
             round={round}
             onUseAction={handleUseAction}
             onNextRound={handleNextRound}
+            onQuitToMenu={handleRestart}
           />
         )}
 
