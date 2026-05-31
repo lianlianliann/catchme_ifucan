@@ -1,0 +1,307 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.screen{width:680px;background:#0a0f14;border:1px solid #1a2a3a;font-family:'Courier New',monospace;overflow:hidden;position:relative}
+.scanline{position:absolute;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,180,120,0.012) 3px,rgba(0,180,120,0.012) 4px);pointer-events:none;z-index:10}
+.corner{position:absolute;width:18px;height:18px;border-color:#1D9E75;border-style:solid}
+.corner.tl{top:8px;left:8px;border-width:2px 0 0 2px}
+.corner.tr{top:8px;right:8px;border-width:2px 2px 0 0}
+.corner.bl{bottom:8px;left:8px;border-width:0 0 2px 2px}
+.corner.br{bottom:8px;right:8px;border-width:0 2px 2px 0}
+.hex-bg{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.04}
+</style>
+<div style="background:#080c10;padding:8px;border:1px solid #1a2a3a;border-radius:4px">
+<p style="color:#1D9E75;font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;margin-bottom:6px;opacity:0.7">SCREEN 1 — MAIN MENU</p>
+<div class="screen" style="height:400px">
+  <div class="scanline"></div>
+  <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+  <svg width="680" height="400">
+    <defs>
+      <linearGradient id="bggrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0a1a12"/>
+        <stop offset="100%" stop-color="#050d0a"/>
+      </linearGradient>
+    </defs>
+    <rect width="680" height="400" fill="url(#bggrad)"/>
+    <ellipse cx="340" cy="200" rx="220" ry="180" fill="#0d2016" opacity="0.6"/>
+    <ellipse cx="340" cy="200" rx="150" ry="130" fill="#0d2016" opacity="0.5"/>
+    <circle cx="340" cy="200" r="2" fill="#1D9E75" opacity="0.8"/>
+    <circle cx="340" cy="200" r="60" fill="none" stroke="#1D9E75" stroke-width="0.5" opacity="0.15" stroke-dasharray="4 6"/>
+    <circle cx="340" cy="200" r="110" fill="none" stroke="#1D9E75" stroke-width="0.5" opacity="0.1" stroke-dasharray="2 8"/>
+    <circle cx="340" cy="200" r="165" fill="none" stroke="#1D9E75" stroke-width="0.5" opacity="0.07" stroke-dasharray="1 10"/>
+    <line x1="40" y1="52" x2="640" y2="52" stroke="#1D9E75" stroke-width="0.5" opacity="0.3"/>
+    <line x1="40" y1="356" x2="640" y2="356" stroke="#1D9E75" stroke-width="0.5" opacity="0.3"/>
+    <text x="340" y="44" text-anchor="middle" fill="#1D9E75" font-size="9" font-family="'Courier New',monospace" letter-spacing="4" opacity="0.6">POLYTECHNIC UNIVERSITY OF THE PHILIPPINES</text>
+    <text x="340" y="110" text-anchor="middle" fill="#5DCAA5" font-size="11" font-family="'Courier New',monospace" letter-spacing="6" opacity="0.7">HOST DEFENSE SYSTEM</text>
+    <text x="340" y="160" text-anchor="middle" fill="#e8f5f0" font-size="38" font-family="'Courier New',monospace" font-weight="bold" letter-spacing="-1">CATCH ME</text>
+    <text x="340" y="198" text-anchor="middle" fill="#e8f5f0" font-size="38" font-family="'Courier New',monospace" font-weight="bold" letter-spacing="-1">IF YOU CAN</text>
+    <text x="340" y="225" text-anchor="middle" fill="#5DCAA5" font-size="11" font-family="'Courier New',monospace" opacity="0.6" letter-spacing="2">OUTSMART THE VIRUS. SAVE THE HOST.</text>
+    <rect x="240" y="248" width="200" height="34" rx="2" fill="none" stroke="#1D9E75" stroke-width="1.5"/>
+    <rect x="241" y="249" width="198" height="32" rx="2" fill="#0d2016"/>
+    <text x="340" y="270" text-anchor="middle" fill="#1D9E75" font-size="12" font-family="'Courier New',monospace" font-weight="bold" letter-spacing="4">DEPLOY</text>
+    <rect x="240" y="292" width="200" height="30" rx="2" fill="none" stroke="#1a3a2a" stroke-width="1"/>
+    <text x="340" y="312" text-anchor="middle" fill="#5F5E5A" font-size="11" font-family="'Courier New',monospace" letter-spacing="3">DIFFICULTY</text>
+    <rect x="240" y="330" width="200" height="30" rx="2" fill="none" stroke="#1a3a2a" stroke-width="1"/>
+    <text x="340" y="350" text-anchor="middle" fill="#5F5E5A" font-size="11" font-family="'Courier New',monospace" letter-spacing="3">TERMINATE</text>
+    <text x="40" y="374" fill="#1D9E75" font-size="9" font-family="'Courier New',monospace" opacity="0.5" letter-spacing="2">SYS.READY</text>
+    <text x="640" y="374" text-anchor="end" fill="#1D9E75" font-size="9" font-family="'Courier New',monospace" opacity="0.5" letter-spacing="1">v1.0.0 // BSCS 3-1</text>
+    <rect x="46" y="56" width="6" height="6" fill="#1D9E75" opacity="0.5"/>
+    <rect x="628" y="56" width="6" height="6" fill="#1D9E75" opacity="0.5"/>
+    <rect x="46" y="340" width="6" height="6" fill="#1D9E75" opacity="0.3"/>
+    <rect x="628" y="340" width="6" height="6" fill="#1D9E75" opacity="0.3"/>
+  </svg>
+</div>
+
+<p style="color:#1D9E75;font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;margin:10px 0 6px;opacity:0.7">SCREEN 2 — DIFFICULTY SELECT</p>
+<div class="screen" style="height:340px">
+  <div class="scanline"></div>
+  <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+  <svg width="680" height="340">
+    <rect width="680" height="340" fill="#050d0a"/>
+    <line x1="40" y1="48" x2="640" y2="48" stroke="#1D9E75" stroke-width="0.5" opacity="0.3"/>
+    <text x="340" y="36" text-anchor="middle" fill="#5DCAA5" font-size="10" font-family="'Courier New',monospace" letter-spacing="5" opacity="0.7">SELECT INFECTION SCENARIO</text>
+    <rect x="46" y="66" width="182" height="220" rx="3" fill="#0a1f12" stroke="#1D9E75" stroke-width="1"/>
+    <rect x="46" y="66" width="182" height="32" rx="3" fill="#1D9E75"/>
+    <text x="137" y="87" text-anchor="middle" fill="#050d0a" font-size="12" font-family="'Courier New',monospace" font-weight="bold" letter-spacing="2">CASUAL</text>
+    <text x="137" y="122" text-anchor="middle" fill="#5DCAA5" font-size="9" font-family="'Courier New',monospace" letter-spacing="1">TURN-BASED</text>
+    <text x="137" y="142" text-anchor="middle" fill="#3d6b55" font-size="9" font-family="'Courier New',monospace">Mutation telegraphed</text>
+    <text x="137" y="158" text-anchor="middle" fill="#3d6b55" font-size="9" font-family="'Courier New',monospace">Every 2 rounds</text>
+    <text x="137" y="174" text-anchor="middle" fill="#3d6b55" font-size="9" font-family="'Courier New',monospace">Generous EP regen</text>
+    <text x="137" y="190" text-anchor="middle" fill="#3d6b55" font-size="9" font-family="'Courier New',monospace">Entry: Lungs only</text>
+    <text x="137" y="218" text-anchor="middle" fill="#1D9E75" font-size="28" font-family="'Courier New',monospace">I</text>
+    <rect x="248" y="66" width="182" height="220" rx="3" fill="#0f1a0a" stroke="#EF9F27" stroke-width="1.5"/>
+    <rect x="248" y="66" width="182" height="32" rx="3" fill="#BA7517"/>
+    <text x="339" y="87" text-anchor="middle" fill="#050d0a" font-size="12" font-family="'Courier New',monospace" font-weight="bold" letter-spacing="2">EPIDEMIC</text>
+    <rect x="268" y="76" width="50" height="12" rx="2" fill="#412402" opacity="0.7"/>
+    <text x="293" y="86" text-anchor="middle" fill="#EF9F27" font-size="7" font-family="'Courier New',monospace" letter-spacing="1">STANDARD</text>
+    <text x="339" y="122" text-anchor="middle" fill="#EF9F27" font-size="9" font-family="'Courier New',monospace" letter-spacing="1">TURN-BASED</text>
+    <text x="339" y="142" text-anchor="middle" fill="#633806" font-size="9" font-family="'Courier New',monospace">No mutation warning</text>
+    <text x="339" y="158" text-anchor="middle" fill="#633806" font-size="9" font-family="'Courier New',monospace">Every round</text>
+    <text x="339" y="174" text-anchor="middle" fill="#633806" font-size="9" font-family="'Courier New',monospace">Standard EP regen</text>
+    <text x="339" y="190" text-anchor="middle" fill="#633806" font-size="9" font-family="'Courier New',monospace">Entry: Lungs only</text>
+    <text x="339" y="218" text-anchor="middle" fill="#EF9F27" font-size="28" font-family="'Courier New',monospace">II</text>
+    <rect x="450" y="66" width="182" height="220" rx="3" fill="#1a0a0a" stroke="#E24B4A" stroke-width="1.5"/>
+    <rect x="450" y="66" width="182" height="32" rx="3" fill="#A32D2D"/>
+    <text x="541" y="87" text-anchor="middle" fill="#fff" font-size="12" font-family="'Courier New',monospace" font-weight="bold" letter-spacing="2">PANDEMIC</text>
+    <text x="541" y="122" text-anchor="middle" fill="#E24B4A" font-size="9" font-family="'Courier New',monospace" letter-spacing="1">HYBRID REAL-TIME</text>
+    <text x="541" y="142" text-anchor="middle" fill="#791F1F" font-size="9" font-family="'Courier New',monospace">No mutation warning</text>
+    <text x="541" y="158" text-anchor="middle" fill="#791F1F" font-size="9" font-family="'Courier New',monospace">Every round</text>
+    <text x="541" y="174" text-anchor="middle" fill="#791F1F" font-size="9" font-family="'Courier New',monospace">Reduced EP regen</text>
+    <text x="541" y="190" text-anchor="middle" fill="#791F1F" font-size="9" font-family="'Courier New',monospace">3 random entry points</text>
+    <text x="541" y="218" text-anchor="middle" fill="#E24B4A" font-size="28" font-family="'Courier New',monospace">III</text>
+    <text x="340" y="310" text-anchor="middle" fill="#3d6b55" font-size="9" font-family="'Courier New',monospace" letter-spacing="2">CLICK CARD TO SELECT SCENARIO</text>
+  </svg>
+</div>
+
+<p style="color:#1D9E75;font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;margin:10px 0 6px;opacity:0.7">SCREEN 3 — IN-GAME UI</p>
+<div class="screen" style="height:480px">
+  <div class="scanline"></div>
+  <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+  <svg width="680" height="480">
+    <rect width="680" height="480" fill="#050d0a"/>
+    <line x1="0" y1="38" x2="680" y2="38" stroke="#1D9E75" stroke-width="0.5" opacity="0.4"/>
+    <line x1="0" y1="448" x2="680" y2="448" stroke="#1D9E75" stroke-width="0.5" opacity="0.4"/>
+    <line x1="160" y1="38" x2="160" y2="448" stroke="#1D9E75" stroke-width="0.5" opacity="0.2"/>
+    <line x1="520" y1="38" x2="520" y2="448" stroke="#1D9E75" stroke-width="0.5" opacity="0.2"/>
+    <rect width="680" height="38" fill="#050d0a"/>
+    <text x="20" y="24" fill="#1D9E75" font-size="10" font-family="'Courier New',monospace" letter-spacing="2">HOST STATUS</text>
+    <text x="340" y="24" text-anchor="middle" fill="#5DCAA5" font-size="10" font-family="'Courier New',monospace" letter-spacing="3">ROUND 05</text>
+    <text x="660" y="24" text-anchor="end" fill="#E24B4A" font-size="10" font-family="'Courier New',monospace" letter-spacing="1">THREAT: ACTIVE</text>
+    <text x="20" y="56" fill="#5DCAA5" font-size="8" font-family="'Courier New',monospace" letter-spacing="2" opacity="0.8">SEVERITY</text>
+    <rect x="20" y="60" width="120" height="10" rx="1" fill="#0a1f12" stroke="#1D9E75" stroke-width="0.5"/>
+    <rect x="20" y="60" width="72" height="10" rx="1" fill="#E24B4A"/>
+    <text x="148" y="70" fill="#E24B4A" font-size="8" font-family="'Courier New',monospace">60%</text>
+    <text x="20" y="86" fill="#5DCAA5" font-size="8" font-family="'Courier New',monospace" letter-spacing="2" opacity="0.8">ENERGY (EP)</text>
+    <rect x="20" y="90" width="120" height="10" rx="1" fill="#0a1f12" stroke="#1D9E75" stroke-width="0.5"/>
+    <rect x="20" y="90" width="90" height="10" rx="1" fill="#1D9E75"/>
+    <text x="148" y="100" fill="#1D9E75" font-size="8" font-family="'Courier New',monospace">75</text>
+    <text x="20" y="116" fill="#5DCAA5" font-size="8" font-family="'Courier New',monospace" letter-spacing="2" opacity="0.8">INFECTION RATE</text>
+    <text x="20" y="132" fill="#EF9F27" font-size="22" font-family="'Courier New',monospace" font-weight="bold">034</text>
+    <text x="20" y="148" fill="#5DCAA5" font-size="8" font-family="'Courier New',monospace" letter-spacing="1" opacity="0.8">ACTIVE MUTATION</text>
+    <rect x="20" y="152" width="128" height="20" rx="2" fill="#1a0d00" stroke="#EF9F27" stroke-width="0.5"/>
+    <text x="84" y="166" text-anchor="middle" fill="#EF9F27" font-size="8" font-family="'Courier New',monospace" letter-spacing="1">ANTIGENIC DRIFT</text>
+    <line x1="20" y1="184" x2="148" y2="184" stroke="#1a3a2a" stroke-width="0.5"/>
+    <text x="20" y="198" fill="#3d6b55" font-size="8" font-family="'Courier New',monospace" letter-spacing="1">ORGAN STATUS</text>
+    <rect x="20" y="205" width="16" height="16" rx="2" fill="#1D9E75" opacity="0.7"/>
+    <text x="42" y="217" fill="#5DCAA5" font-size="8" font-family="'Courier New',monospace">BRAIN</text>
+    <rect x="100" y="209" width="48" height="8" rx="1" fill="#0a1f12" stroke="#1a3a2a" stroke-width="0.5"/>
+    <rect x="100" y="209" width="40" height="8" rx="1" fill="#1D9E75"/>
+    <rect x="20" y="227" width="16" height="16" rx="2" fill="#E24B4A" opacity="0.9"/>
+    <text x="42" y="239" fill="#5DCAA5" font-size="8" font-family="'Courier New',monospace">LUNGS</text>
+    <rect x="100" y="231" width="48" height="8" rx="1" fill="#0a1f12" stroke="#1a3a2a" stroke-width="0.5"/>
+    <rect x="100" y="231" width="20" height="8" rx="1" fill="#E24B4A"/>
+    <rect x="20" y="249" width="16" height="16" rx="2" fill="#1D9E75" opacity="0.7"/>
+    <text x="42" y="261" fill="#5DCAA5" font-size="8" font-family="'Courier New',monospace">HEART</text>
+    <rect x="100" y="253" width="48" height="8" rx="1" fill="#0a1f12" stroke="#1a3a2a" stroke-width="0.5"/>
+    <rect x="100" y="253" width="44" height="8" rx="1" fill="#1D9E75"/>
+    <rect x="20" y="271" width="16" height="16" rx="2" fill="#EF9F27" opacity="0.8"/>
+    <text x="42" y="283" fill="#5DCAA5" font-size="8" font-family="'Courier New',monospace">LYMPH</text>
+    <rect x="100" y="275" width="48" height="8" rx="1" fill="#0a1f12" stroke="#1a3a2a" stroke-width="0.5"/>
+    <rect x="100" y="275" width="32" height="8" rx="1" fill="#EF9F27"/>
+    <rect x="20" y="293" width="16" height="16" rx="2" fill="#1D9E75" opacity="0.7"/>
+    <text x="42" y="305" fill="#5DCAA5" font-size="8" font-family="'Courier New',monospace">GUT</text>
+    <rect x="100" y="297" width="48" height="8" rx="1" fill="#0a1f12" stroke="#1a3a2a" stroke-width="0.5"/>
+    <rect x="100" y="297" width="46" height="8" rx="1" fill="#1D9E75"/>
+    <rect x="20" y="315" width="16" height="16" rx="2" fill="#E24B4A" opacity="0.9"/>
+    <text x="42" y="327" fill="#5DCAA5" font-size="8" font-family="'Courier New',monospace">BLOOD</text>
+    <rect x="100" y="319" width="48" height="8" rx="1" fill="#0a1f12" stroke="#1a3a2a" stroke-width="0.5"/>
+    <rect x="100" y="319" width="14" height="8" rx="1" fill="#E24B4A"/>
+    <ellipse cx="340" cy="243" rx="60" ry="76" fill="none" stroke="#1D9E75" stroke-width="0.5" opacity="0.15"/>
+    <ellipse cx="340" cy="185" rx="36" ry="42" fill="none" stroke="#7F77DD" stroke-width="0.5" opacity="0.2"/>
+    <rect x="300" y="224" width="80" height="50" rx="6" fill="none" stroke="#1D9E75" stroke-width="0.5" opacity="0.25"/>
+    <rect x="300" y="224" width="80" height="16" rx="3" fill="#0d2016" stroke="none"/>
+    <rect x="314" y="276" width="52" height="40" rx="3" fill="none" stroke="#EF9F27" stroke-width="0.5" opacity="0.3"/>
+    <rect x="316" y="278" width="48" height="36" rx="2" fill="#EF9F27" opacity="0.08"/>
+    <rect x="295" y="270" width="14" height="46" rx="3" fill="none" stroke="#1D9E75" stroke-width="0.5" opacity="0.2"/>
+    <rect x="371" y="270" width="14" height="46" rx="3" fill="none" stroke="#1D9E75" stroke-width="0.5" opacity="0.2"/>
+    <rect x="312" y="316" width="56" height="50" rx="4" fill="none" stroke="#EF9F27" stroke-width="0.5" opacity="0.2"/>
+    <line x1="340" y1="143" x2="340" y2="167" stroke="#7F77DD" stroke-width="0.5" opacity="0.5"/>
+    <path d="M320 224 C320 215 360 215 360 224" fill="none" stroke="#1D9E75" stroke-width="0.5" opacity="0.3"/>
+    <path d="M310 270 C295 260 290 245 295 235" fill="none" stroke="#1D9E75" stroke-width="0.5" opacity="0.2"/>
+    <path d="M370 270 C385 260 390 245 385 235" fill="none" stroke="#1D9E75" stroke-width="0.5" opacity="0.2"/>
+    <path d="M320 366 L320 395 M360 366 L360 395" fill="none" stroke="#1D9E75" stroke-width="0.5" opacity="0.15"/>
+    <ellipse cx="302" cy="265" rx="3" ry="3" fill="#E24B4A" opacity="0.7"/>
+    <ellipse cx="378" cy="265" rx="3" ry="3" fill="#E24B4A" opacity="0.7"/>
+    <line x1="302" y1="262" x2="302" y2="246" stroke="#E24B4A" stroke-width="0.5" opacity="0.5" stroke-dasharray="2 2"/>
+    <line x1="378" y1="262" x2="378" y2="246" stroke="#E24B4A" stroke-width="0.5" opacity="0.5" stroke-dasharray="2 2"/>
+    <text x="340" y="412" text-anchor="middle" fill="#E24B4A" font-size="8" font-family="'Courier New',monospace" opacity="0.5">LUNGS — INFECTED</text>
+    <line x1="520" y1="38" x2="520" y2="448" stroke="#1D9E75" stroke-width="0.5" opacity="0.2"/>
+    <text x="534" y="56" fill="#3d6b55" font-size="8" font-family="'Courier New',monospace" letter-spacing="1">DEPLOY IMMUNE ACTION</text>
+    <rect x="528" y="62" width="140" height="52" rx="2" fill="#0a1f12" stroke="#1D9E75" stroke-width="1"/>
+    <rect x="528" y="62" width="140" height="14" rx="2" fill="#1D9E75" opacity="0.3"/>
+    <text x="598" y="73" text-anchor="middle" fill="#1D9E75" font-size="8" font-family="'Courier New',monospace" letter-spacing="2">WHITE BLOOD CELL</text>
+    <text x="533" y="90" fill="#3d6b55" font-size="7" font-family="'Courier New',monospace">Patrol zone // reduce spread</text>
+    <text x="660" y="106" text-anchor="end" fill="#5DCAA5" font-size="10" font-family="'Courier New',monospace">10 EP</text>
+    <rect x="528" y="122" width="140" height="52" rx="2" fill="#0a1000" stroke="#1a3a2a" stroke-width="0.5"/>
+    <text x="598" y="137" text-anchor="middle" fill="#3d6b55" font-size="8" font-family="'Courier New',monospace" letter-spacing="2">ANTIBODY</text>
+    <text x="533" y="155" fill="#2a4a35" font-size="7" font-family="'Courier New',monospace">Target specific strain</text>
+    <text x="660" y="167" text-anchor="end" fill="#3d6b55" font-size="10" font-family="'Courier New',monospace">25 EP</text>
+    <rect x="528" y="182" width="140" height="52" rx="2" fill="#0a1000" stroke="#1a3a2a" stroke-width="0.5"/>
+    <text x="598" y="197" text-anchor="middle" fill="#3d6b55" font-size="8" font-family="'Courier New',monospace" letter-spacing="2">INFLAMMATION</text>
+    <text x="533" y="215" fill="#2a4a35" font-size="7" font-family="'Courier New',monospace">Quarantine zone</text>
+    <text x="660" y="227" text-anchor="end" fill="#3d6b55" font-size="10" font-family="'Courier New',monospace">20 EP</text>
+    <rect x="528" y="242" width="140" height="52" rx="2" fill="#0a1000" stroke="#1a3a2a" stroke-width="0.5"/>
+    <text x="598" y="257" text-anchor="middle" fill="#3d6b55" font-size="8" font-family="'Courier New',monospace" letter-spacing="2">FEVER RESPONSE</text>
+    <text x="533" y="275" fill="#2a4a35" font-size="7" font-family="'Courier New',monospace">Global virus slowdown</text>
+    <text x="660" y="287" text-anchor="end" fill="#3d6b55" font-size="10" font-family="'Courier New',monospace">35 EP</text>
+    <rect x="528" y="302" width="140" height="52" rx="2" fill="#0a1000" stroke="#1a3a2a" stroke-width="0.5"/>
+    <text x="598" y="317" text-anchor="middle" fill="#3d6b55" font-size="8" font-family="'Courier New',monospace" letter-spacing="2">MEMORY CELLS</text>
+    <text x="533" y="335" fill="#2a4a35" font-size="7" font-family="'Courier New',monospace">Counter seen mutation</text>
+    <text x="660" y="347" text-anchor="end" fill="#3d6b55" font-size="10" font-family="'Courier New',monospace">15 EP</text>
+    <rect x="528" y="362" width="140" height="52" rx="2" fill="#1a0000" stroke="#E24B4A" stroke-width="0.5" opacity="0.6"/>
+    <text x="598" y="377" text-anchor="middle" fill="#E24B4A" font-size="8" font-family="'Courier New',monospace" letter-spacing="2">CYTOKINE BURST</text>
+    <text x="533" y="395" fill="#791F1F" font-size="7" font-family="'Courier New',monospace">Nuke all zones // +10% sev</text>
+    <text x="660" y="407" text-anchor="end" fill="#E24B4A" font-size="10" font-family="'Courier New',monospace">50 EP</text>
+    <text x="20" y="466" fill="#3d6b55" font-size="8" font-family="'Courier New',monospace" letter-spacing="1">STATUS // TURN-BASED // EPIDEMIC MODE</text>
+    <text x="660" y="466" text-anchor="end" fill="#3d6b55" font-size="8" font-family="'Courier New',monospace">NEXT ROUND ></text>
+  </svg>
+</div>
+
+<p style="color:#1D9E75;font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;margin:10px 0 6px;opacity:0.7">SCREEN 4 — ROUND RESOLVE POPUP</p>
+<div style="background:#050d0a;border:1px solid #1a2a1a;height:280px;display:flex;align-items:center;justify-content:center">
+  <svg width="680" height="280">
+    <rect width="680" height="280" fill="#050d0a"/>
+    <rect x="160" y="30" width="360" height="220" rx="4" fill="#070f09" stroke="#1D9E75" stroke-width="1.5"/>
+    <rect x="160" y="30" width="360" height="36" rx="4" fill="#0d2016"/>
+    <line x1="160" y1="66" x2="520" y2="66" stroke="#1D9E75" stroke-width="0.5"/>
+    <text x="340" y="53" text-anchor="middle" fill="#5DCAA5" font-size="11" font-family="'Courier New',monospace" letter-spacing="4">ROUND 05 — RESOLVED</text>
+    <text x="185" y="90" fill="#3d6b55" font-size="8" font-family="'Courier New',monospace" letter-spacing="2">OUTCOME LOG</text>
+    <line x1="180" y1="95" x2="500" y2="95" stroke="#1a3a2a" stroke-width="0.5"/>
+    <rect x="180" y="102" width="8" height="8" rx="1" fill="#1D9E75"/>
+    <text x="196" y="111" fill="#5DCAA5" font-size="9" font-family="'Courier New',monospace">Zone cleared: Gut</text>
+    <text x="490" y="111" text-anchor="end" fill="#1D9E75" font-size="9" font-family="'Courier New',monospace">-8 INFECTION</text>
+    <rect x="180" y="120" width="8" height="8" rx="1" fill="#E24B4A"/>
+    <text x="196" y="129" fill="#5DCAA5" font-size="9" font-family="'Courier New',monospace">New zone infected: Blood</text>
+    <text x="490" y="129" text-anchor="end" fill="#E24B4A" font-size="9" font-family="'Courier New',monospace">+5% SEVERITY</text>
+    <rect x="180" y="138" width="8" height="8" rx="1" fill="#EF9F27"/>
+    <text x="196" y="147" fill="#5DCAA5" font-size="9" font-family="'Courier New',monospace">Mutation selected by virus</text>
+    <text x="490" y="147" text-anchor="end" fill="#EF9F27" font-size="9" font-family="'Courier New',monospace">ANTIGENIC DRIFT</text>
+    <rect x="180" y="156" width="8" height="8" rx="1" fill="#7F77DD"/>
+    <text x="196" y="165" fill="#5DCAA5" font-size="9" font-family="'Courier New',monospace">EP regenerated from 4 zones</text>
+    <text x="490" y="165" text-anchor="end" fill="#7F77DD" font-size="9" font-family="'Courier New',monospace">+40 EP</text>
+    <line x1="180" y1="180" x2="500" y2="180" stroke="#1a3a2a" stroke-width="0.5"/>
+    <text x="185" y="196" fill="#3d6b55" font-size="8" font-family="'Courier New',monospace" letter-spacing="1">SEVERITY INDEX</text>
+    <rect x="185" y="200" width="200" height="10" rx="1" fill="#0a1f12" stroke="#1a3a2a" stroke-width="0.5"/>
+    <rect x="185" y="200" width="130" height="10" rx="1" fill="#E24B4A"/>
+    <text x="392" y="210" fill="#E24B4A" font-size="9" font-family="'Courier New',monospace">65%  +5%</text>
+    <rect x="360" y="222" width="130" height="28" rx="2" fill="#1D9E75"/>
+    <text x="425" y="241" text-anchor="middle" fill="#050d0a" font-size="10" font-family="'Courier New',monospace" font-weight="bold" letter-spacing="3">NEXT ROUND</text>
+  </svg>
+</div>
+
+<p style="color:#1D9E75;font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;margin:10px 0 6px;opacity:0.7">SCREEN 5 — WIN + SCREEN 6 — GAME OVER</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+  <div class="screen" style="height:220px">
+    <div class="scanline"></div>
+    <svg width="340" height="220">
+      <rect width="340" height="220" fill="#020a04"/>
+      <rect width="340" height="220" fill="#1D9E75" opacity="0.06"/>
+      <circle cx="170" cy="90" r="44" fill="none" stroke="#1D9E75" stroke-width="1"/>
+      <circle cx="170" cy="90" r="36" fill="#0d2016" stroke="#1D9E75" stroke-width="0.5"/>
+      <text x="170" y="80" text-anchor="middle" fill="#1D9E75" font-size="10" font-family="'Courier New',monospace" letter-spacing="1">THREAT</text>
+      <text x="170" y="98" text-anchor="middle" fill="#1D9E75" font-size="10" font-family="'Courier New',monospace" letter-spacing="1">NEUTRALIZED</text>
+      <text x="170" y="152" text-anchor="middle" fill="#e8f5f0" font-size="18" font-family="'Courier New',monospace" font-weight="bold" letter-spacing="2">VICTORY</text>
+      <text x="170" y="170" text-anchor="middle" fill="#5DCAA5" font-size="8" font-family="'Courier New',monospace">HOST FULLY RECOVERED</text>
+      <rect x="90" y="184" width="160" height="24" rx="2" fill="#1D9E75"/>
+      <text x="170" y="200" text-anchor="middle" fill="#050d0a" font-size="9" font-family="'Courier New',monospace" font-weight="bold" letter-spacing="3">MAIN MENU</text>
+    </svg>
+  </div>
+  <div class="screen" style="height:220px">
+    <div class="scanline"></div>
+    <svg width="340" height="220">
+      <rect width="340" height="220" fill="#0a0202"/>
+      <rect width="340" height="220" fill="#E24B4A" opacity="0.05"/>
+      <circle cx="170" cy="90" r="44" fill="none" stroke="#E24B4A" stroke-width="1"/>
+      <circle cx="170" cy="90" r="36" fill="#1a0505" stroke="#E24B4A" stroke-width="0.5"/>
+      <text x="170" y="80" text-anchor="middle" fill="#E24B4A" font-size="10" font-family="'Courier New',monospace" letter-spacing="1">HOST</text>
+      <text x="170" y="98" text-anchor="middle" fill="#E24B4A" font-size="10" font-family="'Courier New',monospace" letter-spacing="1">COMPROMISED</text>
+      <text x="170" y="152" text-anchor="middle" fill="#fff" font-size="18" font-family="'Courier New',monospace" font-weight="bold" letter-spacing="2">GAME OVER</text>
+      <text x="170" y="170" text-anchor="middle" fill="#E24B4A" font-size="8" font-family="'Courier New',monospace">SEVERITY REACHED 100%</text>
+      <rect x="90" y="184" width="160" height="24" rx="2" fill="none" stroke="#E24B4A" stroke-width="1"/>
+      <text x="170" y="200" text-anchor="middle" fill="#E24B4A" font-size="9" font-family="'Courier New',monospace" letter-spacing="3">RETRY</text>
+    </svg>
+  </div>
+</div>
+
+<p style="color:#1D9E75;font-family:'Courier New',monospace;font-size:10px;letter-spacing:2px;margin:10px 0 6px;opacity:0.7">SPRITE SHEET — UI COMPONENTS</p>
+<div class="screen" style="height:200px">
+  <div class="scanline"></div>
+  <svg width="680" height="200">
+    <rect width="680" height="200" fill="#050d0a"/>
+    <text x="20" y="20" fill="#3d6b55" font-size="8" font-family="'Courier New',monospace" letter-spacing="2">BUTTON STATES</text>
+    <rect x="20" y="28" width="100" height="28" rx="2" fill="#0d2016" stroke="#1D9E75" stroke-width="1.5"/>
+    <text x="70" y="46" text-anchor="middle" fill="#1D9E75" font-size="8" font-family="'Courier New',monospace" letter-spacing="2">NORMAL</text>
+    <rect x="132" y="28" width="100" height="28" rx="2" fill="#1D9E75" stroke="#1D9E75" stroke-width="1.5"/>
+    <text x="182" y="46" text-anchor="middle" fill="#050d0a" font-size="8" font-family="'Courier New',monospace" font-weight="bold" letter-spacing="2">HOVERED</text>
+    <rect x="244" y="28" width="100" height="28" rx="2" fill="#050d0a" stroke="#1a3a2a" stroke-width="0.5" opacity="0.4"/>
+    <text x="294" y="46" text-anchor="middle" fill="#3d6b55" font-size="8" font-family="'Courier New',monospace" letter-spacing="2" opacity="0.5">DISABLED</text>
+    <rect x="356" y="28" width="100" height="28" rx="2" fill="#1a0000" stroke="#E24B4A" stroke-width="1"/>
+    <text x="406" y="46" text-anchor="middle" fill="#E24B4A" font-size="8" font-family="'Courier New',monospace" letter-spacing="2">DANGER</text>
+    <text x="20" y="80" fill="#3d6b55" font-size="8" font-family="'Courier New',monospace" letter-spacing="2">ZONE STATUS INDICATORS</text>
+    <rect x="20" y="88" width="18" height="18" rx="2" fill="#1D9E75"/>
+    <text x="46" y="101" fill="#5DCAA5" font-size="8" font-family="'Courier New',monospace">HEALTHY</text>
+    <rect x="110" y="88" width="18" height="18" rx="2" fill="#E24B4A"/>
+    <text x="136" y="101" fill="#5DCAA5" font-size="8" font-family="'Courier New',monospace">INFECTED</text>
+    <rect x="210" y="88" width="18" height="18" rx="2" fill="#EF9F27"/>
+    <text x="236" y="101" fill="#5DCAA5" font-size="8" font-family="'Courier New',monospace">CONTESTED</text>
+    <rect x="320" y="88" width="18" height="18" rx="2" fill="#3d6b55"/>
+    <text x="346" y="101" fill="#5DCAA5" font-size="8" font-family="'Courier New',monospace">CLEARED</text>
+    <text x="20" y="130" fill="#3d6b55" font-size="8" font-family="'Courier New',monospace" letter-spacing="2">PROGRESS BARS — FULL / PARTIAL / CRITICAL / EMPTY</text>
+    <rect x="20" y="138" width="140" height="10" rx="1" fill="#0a1f12" stroke="#1D9E75" stroke-width="0.5"/>
+    <rect x="20" y="138" width="140" height="10" rx="1" fill="#1D9E75"/>
+    <rect x="172" y="138" width="140" height="10" rx="1" fill="#0a1f12" stroke="#1D9E75" stroke-width="0.5"/>
+    <rect x="172" y="138" width="80" height="10" rx="1" fill="#EF9F27"/>
+    <rect x="324" y="138" width="140" height="10" rx="1" fill="#0a1f12" stroke="#E24B4A" stroke-width="0.5"/>
+    <rect x="324" y="138" width="20" height="10" rx="1" fill="#E24B4A"/>
+    <rect x="476" y="138" width="140" height="10" rx="1" fill="#0a1f12" stroke="#1a3a2a" stroke-width="0.5"/>
+    <text x="20" y="165" fill="#3d6b55" font-size="8" font-family="'Courier New',monospace" letter-spacing="2">MUTATION BADGE</text>
+    <rect x="20" y="170" width="130" height="18" rx="2" fill="#1a0d00" stroke="#EF9F27" stroke-width="0.5"/>
+    <text x="85" y="183" text-anchor="middle" fill="#EF9F27" font-size="8" font-family="'Courier New',monospace" letter-spacing="1">ANTIGENIC DRIFT</text>
+    <rect x="162" y="170" width="130" height="18" rx="2" fill="#1a0000" stroke="#E24B4A" stroke-width="0.5"/>
+    <text x="227" y="183" text-anchor="middle" fill="#E24B4A" font-size="8" font-family="'Courier New',monospace" letter-spacing="1">HEAT SHOCK PROT.</text>
+    <rect x="304" y="170" width="130" height="18" rx="2" fill="#0a001a" stroke="#7F77DD" stroke-width="0.5"/>
+    <text x="369" y="183" text-anchor="middle" fill="#7F77DD" font-size="8" font-family="'Courier New',monospace" letter-spacing="1">EVADE PHAGO.</text>
+    <text x="20" y="196" fill="#1a3a2a" font-size="7" font-family="'Courier New',monospace" letter-spacing="1">CORNER BRACKETS — PANEL BORDERS — SCAN LINES — MONOSPACE FONT THROUGHOUT</text>
+  </svg>
+</div>
+</div>
