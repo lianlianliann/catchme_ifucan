@@ -18,8 +18,12 @@ export class VirusAI {
     });
 
     let spreadOccurred = false;
+    
+    // FIX: Capture the queue size so we only process the current layer of infections.
+    const initialQueueSize = queue.length;
 
-    while (queue.length > 0) {
+    // Use a for-loop based on the initial size instead of a while(queue.length > 0) loop
+    for (let i = 0; i < initialQueueSize; i++) {
       const current = queue.shift()!;
       if (!graph.adjacencyList[current]) continue;
 
@@ -42,14 +46,13 @@ export class VirusAI {
           state.severityIndex += 5;
 
           turnNarratives.push(`[BREACH] Virus completely overran tissue limits and flooded the ${zone.name}.`);
-          turnNarratives.push(` -> ${getOrganSymptomText(target, false)}`);
-
+          
           if (target === 'Brain') {
             state.severityIndex += 25;
             turnNarratives.push(`[CRITICAL] ⚠ Brain blood barrier broken! Severity spikes an additional +25%!`);
           }
-
-          queue.push(target);
+          
+          // This prevents the virus from cascading through the whole body in one turn.
         }
         visited.add(target);
       }

@@ -1,15 +1,14 @@
 import { motion } from "motion/react";
-
-type Difficulty = 'CASUAL' | 'EPIDEMIC' | 'PANDEMIC';
+import { DifficultyMode } from "../../game_logic/GameLogic";
 
 interface DifficultySelectScreenProps {
-  onSelectDifficulty: (difficulty: Difficulty) => void;
+  onSelectDifficulty: (difficulty: DifficultyMode) => void;
 }
 
 export function DifficultySelectScreen({ onSelectDifficulty }: DifficultySelectScreenProps) {
   const difficulties = [
     {
-      id: 'CASUAL' as const,
+      id: 'Casual' as const, // Changed to match GameLogic
       title: 'CASUAL',
       level: 'I',
       color: '#1D9E75',
@@ -23,7 +22,7 @@ export function DifficultySelectScreen({ onSelectDifficulty }: DifficultySelectS
       ]
     },
     {
-      id: 'EPIDEMIC' as const,
+      id: 'Epidemic' as const, // Changed to match GameLogic
       title: 'EPIDEMIC',
       level: 'II',
       color: '#EF9F27',
@@ -37,7 +36,7 @@ export function DifficultySelectScreen({ onSelectDifficulty }: DifficultySelectS
       ]
     },
     {
-      id: 'PANDEMIC' as const,
+      id: 'Pandemic' as const, // Changed to match GameLogic
       title: 'PANDEMIC',
       level: 'III',
       color: '#E24B4A',
@@ -95,9 +94,9 @@ export function DifficultySelectScreen({ onSelectDifficulty }: DifficultySelectS
             <div className="absolute bottom-1 left-1 w-4 h-4 border-l-2 border-b-2" style={{ borderColor: diff.color }} />
             <div className="absolute bottom-1 right-1 w-4 h-4 border-r-2 border-b-2" style={{ borderColor: diff.color }} />
 
-            {/* Header */}
-            <div className="py-4" style={{ backgroundColor: diff.id === 'CASUAL' ? '#1D9E75' : diff.id === 'EPIDEMIC' ? '#BA7517' : '#A32D2D' }}>
-              <span className={`text-xs tracking-[2px] font-bold ${diff.id === 'PANDEMIC' ? 'text-white' : 'text-[#050d0a]'}`}>
+            {/* Header - Updated conditional checks to match Title Case */}
+            <div className="py-4" style={{ backgroundColor: diff.id === 'Casual' ? '#1D9E75' : diff.id === 'Epidemic' ? '#BA7517' : '#A32D2D' }}>
+              <span className={`text-xs tracking-[2px] font-bold ${diff.id === 'Pandemic' ? 'text-white' : 'text-[#050d0a]'}`}>
                 {diff.title}
               </span>
             </div>
