@@ -1,4 +1,3 @@
-// src/app/game/MainMenuScreen.tsx
 import { motion } from "motion/react";
 import { useState } from "react";
 import { SettingsModal } from "../components/SettingsModal";
@@ -83,7 +82,6 @@ export function MainMenuScreen({ onStartGame }: MainMenuScreenProps) {
           <div className="absolute bottom-1 right-1 w-4 h-4 border-r-2 border-b-2 border-[#1D9E75]" />
         </motion.button>
 
-        {/* Upgraded Settings Button */}
         <motion.button
           onClick={() => setShowSettings(true)}
           whileHover={{
@@ -95,14 +93,6 @@ export function MainMenuScreen({ onStartGame }: MainMenuScreenProps) {
           className="w-96 h-14 bg-transparent border border-[#1a3a2a] rounded-sm flex items-center justify-center group transition-all duration-300"
         >
           <span className="text-[#3d6b55] group-hover:text-[#050d0a] group-hover:font-bold text-sm tracking-[6px] transition-colors">SETTINGS</span>
-        </motion.button>
-
-        {/* Terminate Button */}
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          className="w-96 h-14 bg-transparent border border-[#1a3a2a] rounded-sm flex items-center justify-center hover:border-[#3d6b55] transition-colors"
-        >
-          <span className="text-[#3d6b55] text-sm tracking-[6px]">TERMINATE</span>
         </motion.button>
       </motion.div>
 
