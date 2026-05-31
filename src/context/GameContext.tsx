@@ -7,6 +7,9 @@ import {
   DEFENSE_EP_COSTS,
   DEFENSE_COOLDOWNS,
   CYTOKINE_SEVERITY_PENALTY,
+  ZONE_RESISTANCE,
+  ZONE_INFECTION_WEIGHT,
+  RECLAMATION_THRESHOLD
 } from '../game_logic/GameLogic';
 import { VirusAI }              from '../game_logic/VirusAI';
 import { VirusRL }              from '../game_logic/VirusRL';
@@ -23,7 +26,6 @@ interface GameContextType {
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
-// Singletons that don't depend on difficulty (VirusRL is re-created on new game)
 const virusAI      = new VirusAI();
 const decisionTree = new DecisionTree();
 const wrs          = new WeightedResponseSystem();
@@ -32,99 +34,63 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   const [state,    setState]    = useState<GameState>(() => buildInitialState('Casual'));
   const [rlEngine, setRlEngine] = useState<VirusRL>(() => new VirusRL('Casual'));
 
-  // ── Start new game ─────────────────────────────────────────────────────────
   const startNewGame = (difficulty: DifficultyMode) => {
     const initial = buildInitialState(difficulty);
-    // Wire narrative for game start — populates currentTurnContext AND logFeed
     const withContext = NarrativeEngine.generateInitialContext(structuredClone(initial));
     setState(withContext);
     setRlEngine(new VirusRL(difficulty));
   };
 
-  // ── Deploy a defense unit ──────────────────────────────────────────────────
-  // epCost parameter removed — costs are now read from DEFENSE_EP_COSTS.
-  // UI callers should import DEFENSE_EP_COSTS for display purposes only.
   const deployDefenseUnit = (zoneName: string, defenseType: string) => {
     setState(prev => {
       if (prev.gameStatus !== 'IN_PROGRESS') return prev;
 
       const next = structuredClone(prev);
 
-      // ── 1. Cooldown gate ───────────────────────────────────────────────────
       const cooldownRemaining = next.defenseCooldowns[defenseType] ?? 0;
       if (cooldownRemaining > 0) {
-        next.logFeed.push(
-          `[COOLDOWN] ${defenseType} is still recovering. ` +
-          `Available again in ${cooldownRemaining} round(s). ` +
-          `(Biological basis: immune cells require time to replenish between deployments.)`
-        );
+        next.logFeed.push(`[COOLDOWN] ${defenseType} is still recovering. Available again in ${cooldownRemaining} round(s).`);
         return next;
       }
 
-      // ── 2. Calculate actual EP cost with escalating surcharge ─────────────
       const baseEpCost    = DEFENSE_EP_COSTS[defenseType] ?? 0;
       const timesUsed     = next.defenseUsedThisRound[defenseType] ?? 0;
-      // +50% compounding per repeat use within the same round
-      // 1st use: baseEpCost × 1.0, 2nd: × 1.5, 3rd: × 2.25, ...
       const surchargeMultiplier = Math.pow(1.5, timesUsed);
       const actualEpCost  = Math.ceil(baseEpCost * surchargeMultiplier);
 
       if (timesUsed > 0) {
-        next.logFeed.push(
-          `[DIMINISHING RETURNS] ${defenseType} already used ${timesUsed}× this round. ` +
-          `Repeat deployment costs ${actualEpCost} EP ` +
-          `(base ${baseEpCost} EP × ${surchargeMultiplier.toFixed(2)} surcharge). ` +
-          `Scientific basis: repeated immune activation yields reduced marginal efficacy.`
-        );
+        next.logFeed.push(`[DIMINISHING RETURNS] ${defenseType} already used ${timesUsed}× this round. Repeat deployment costs ${actualEpCost} EP.`);
       }
 
-      // ── 3. EP affordability check ─────────────────────────────────────────
       if (next.playerEp < actualEpCost) {
-        next.logFeed.push(
-          `[SYSTEM ERROR] Insufficient energy reserves for ${defenseType}. ` +
-          `Required: ${actualEpCost} EP. Available: ${next.playerEp} EP.`
-        );
+        next.logFeed.push(`[SYSTEM ERROR] Insufficient energy reserves for ${defenseType}. Required: ${actualEpCost} EP. Available: ${next.playerEp} EP.`);
         return next;
       }
 
-      // ── 4. Deduct EP and apply defense ────────────────────────────────────
       next.playerEp -= actualEpCost;
-      next.organGraph.zones[zoneName].activeDefenseCount +=
-        (defenseType === 'WhiteBloodCells' ? 1 : 2);
+      next.organGraph.zones[zoneName].activeDefenseCount += (defenseType === 'WhiteBloodCells' ? 1 : 2);
       next.playerDefenses[defenseType] = (next.playerDefenses[defenseType] ?? 0) + 1;
 
-      // ── 5. Apply Cytokine Burst severity penalty ──────────────────────────
-      // Proposal rule: Cytokine Burst costs +10% Severity Index (autoimmune damage)
       if (defenseType === 'CytokineBurst') {
         next.severityIndex = Math.min(100, next.severityIndex + CYTOKINE_SEVERITY_PENALTY);
-        next.logFeed.push(
-          `[CYTOKINE WARNING] Cytokine Burst released. ` +
-          `Collateral autoimmune damage: +${CYTOKINE_SEVERITY_PENALTY}% Severity Index. ` +
-          `(Cytokine storms can damage healthy tissue — use sparingly.)`
-        );
+        next.logFeed.push(`[CYTOKINE WARNING] Cytokine Burst released. Collateral autoimmune damage: +${CYTOKINE_SEVERITY_PENALTY}% Severity Index.`);
       }
 
-      // ── 6. Register use for cooldown and surcharge tracking ───────────────
       next.defenseUsedThisRound[defenseType] = timesUsed + 1;
-      next.defenseCooldowns[defenseType]     = DEFENSE_COOLDOWNS[defenseType] ?? 1;
+      const appliedCooldown = DEFENSE_COOLDOWNS[next.difficulty][defenseType] ?? 1;
+      next.defenseCooldowns[defenseType] = appliedCooldown;
 
-      next.logFeed.push(
-        `[PLAYER ACTION] Dispatched ${defenseType} reinforcement units to the ${zoneName}. ` +
-        `Cost: ${actualEpCost} EP. Cooldown: ${DEFENSE_COOLDOWNS[defenseType]} round(s).`
-      );
+      next.logFeed.push(`[PLAYER ACTION] Dispatched ${defenseType} reinforcement units to the ${zoneName}. Cost: ${actualEpCost} EP. Cooldown: ${appliedCooldown} round(s).`);
 
       return next;
     });
   };
 
-  // ── Process end-of-round sequence ─────────────────────────────────────────
   const processTurnSequence = () => {
     setState(prev => {
       if (prev.gameStatus !== 'IN_PROGRESS') return prev;
 
-      // Snapshot of state before virus acts (used by NarrativeEngine diff)
       const prevSnapshot = structuredClone(prev);
-
       let next = structuredClone(prev);
       const settings = DIFFICULTY_SETTINGS[next.difficulty];
       const turnNarratives: string[] = [];
@@ -133,17 +99,76 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       turnNarratives.push(`📋 END-OF-ROUND REPORT: ROUND ${next.roundNumber}`);
       turnNarratives.push(`==================================================`);
 
-      // ── Phase 0: Tick down cooldowns (start of new round processing) ───────
+      // ── Phase 0: Tick down cooldowns ─────────────────────────────────────────
       Object.keys(next.defenseCooldowns).forEach(defType => {
         if (next.defenseCooldowns[defType] > 0) {
           next.defenseCooldowns[defType] -= 1;
         }
       });
-
-      // ── Reset per-round use tracker ────────────────────────────────────────
       next.defenseUsedThisRound = {};
 
-      // ── Phase 11a: Uncontested mutation severity penalty ──────────────────
+      // ── Phase 2: EP income generation ────────────────────────────────────────
+      const healthyOrgans = Object.values(next.organGraph.zones).filter(z => !z.isInfected);
+      const organEpGained = healthyOrgans.reduce((total, zone) => total + zone.epGeneration, 0);
+      const baseMetabolism = 10;
+      const totalEpGained = organEpGained + baseMetabolism;
+      next.playerEp += totalEpGained;
+
+      turnNarratives.push(`[ENERGY BIOMETRICS] +${totalEpGained} EP Recovered. (+${baseMetabolism} Base Metabolism, +${organEpGained} from ${healthyOrgans.length} clean organs).`);
+
+      // ── Phase 3 & 4: RL strategy selection + Minimax evaluation ──────────────
+      const minimaxSuggestion = virusAI.calculateBestMove(next, settings.minimaxDepth);
+      const strategicAction   = rlEngine.selectAction(next, minimaxSuggestion);
+      next.minimaxRecommendedTarget = strategicAction;
+
+      // ── Phase 5: BFS spread execution ────────────────────────────────────────
+      const spreadLogs    = virusAI.executeSpreadVirus(next);
+      const spreadOccurred = spreadLogs.some(l => l.includes('[BREACH]'));
+      turnNarratives.push(...spreadLogs);
+
+      // ── Phase 6: Decision Tree mutation ──────────────────────────────────────
+      const newlyAppliedMutation = decisionTree.selectAndApplyMutation(next);
+      if (newlyAppliedMutation) {
+        const structuralName  = newlyAppliedMutation.replace('_Mutation', '').replace(/_/g, ' ');
+        const functionalDesc  = decisionTree.getMutationDescription(newlyAppliedMutation);
+        turnNarratives.push(`[GENETIC ALTERATION] Pathogen expressed: "${structuralName}"`);
+        turnNarratives.push(` -> Effect Profile: ${functionalDesc}`);
+      }
+
+      // ── Phase 7 (MOVED): Zone Reclamation System (The Tug-of-War) ────────────
+      Object.entries(next.organGraph.zones).forEach(([zoneName, zone]) => {
+        if (zone.isInfected) {
+          const defense = zone.activeDefenseCount;
+          const resistance = ZONE_RESISTANCE[zoneName];
+          const pressure = defense - resistance;
+
+          if (pressure > 0) {
+            zone.reclamationProgress += pressure;
+            
+            // Check if the zone has been successfully reclaimed
+            if (zone.reclamationProgress >= RECLAMATION_THRESHOLD) {
+              zone.isInfected = false;
+              zone.reclamationProgress = 0;
+              // Retain half the defenses as resident memory cells
+              zone.activeDefenseCount = Math.ceil(zone.activeDefenseCount * 0.5);
+              
+              next.infectionRate = Math.max(0, next.infectionRate - ZONE_INFECTION_WEIGHT[zoneName]);
+              turnNarratives.push(`[RECLAIMED] Sustained immune pressure cleared the ${zoneName}! Remaining cells transition to resident memory.`);
+            }
+          } else {
+            // Virus pushes back, eroding partial reclamation progress
+            zone.reclamationProgress = Math.max(0, zone.reclamationProgress + pressure - 1);
+          }
+        }
+      });
+
+      // Safety fallback: if no organs are infected, force infection rate to 0 to trigger the win condition
+      const remainingInfected = Object.values(next.organGraph.zones).filter(z => z.isInfected).length;
+      if (remainingInfected === 0) {
+        next.infectionRate = 0;
+      }
+
+      // ── Phase 8: Uncontested mutation severity penalty ───────────────────────
       const mutationPenalty = decisionTree.calculateUncontestedSeverity(next, turnNarratives);
       const wasContested    = mutationPenalty === 0;
 
@@ -152,7 +177,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       }
       next.severityIndex = Math.min(100, Math.max(0, next.severityIndex));
 
-      // ── Win/Loss boundary checks ───────────────────────────────────────────
+      // ── Win/Loss boundary checks ─────────────────────────────────────────────
       if (next.infectionRate <= 0) {
         next.gameStatus = 'WIN';
         turnNarratives.push('✓ MISSION SUCCESS — All cellular replication vectors cleared.');
@@ -168,73 +193,29 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         return next;
       }
 
-      // ── ADVANCE SIMULATION CLOCK ───────────────────────────────────────────
       next.roundNumber  += 1;
       next.playerDefenses = {};
 
-      // ── Phase 2: EP income generation ─────────────────────────────────────
-      const healthyCount = Object.values(next.organGraph.zones)
-        .filter(z => !z.isInfected).length;
-      const epGained     = healthyCount * settings.epPerHealthyOrgan;
-      next.playerEp     += epGained;
-      turnNarratives.push(
-        `[ENERGY BIOMETRICS] +${epGained} EP distributed from ${healthyCount} clean organs.`
-      );
-
-      // ── Phase 3 & 4: RL strategy selection + Minimax evaluation ───────────
-      const minimaxSuggestion = virusAI.calculateBestMove(next, settings.minimaxDepth);
-      const strategicAction   = rlEngine.selectAction(next, minimaxSuggestion);
-      next.minimaxRecommendedTarget = strategicAction;
-
-      // ── Phase 5: BFS spread execution ─────────────────────────────────────
-      const spreadLogs    = virusAI.executeSpreadVirus(next);
-      const spreadOccurred = spreadLogs.some(l => l.includes('[BREACH]'));
-      turnNarratives.push(...spreadLogs);
-
-      // ── Phase 6: Decision Tree mutation ───────────────────────────────────
-      const newlyAppliedMutation = decisionTree.selectAndApplyMutation(next);
-      if (newlyAppliedMutation) {
-        const structuralName  = newlyAppliedMutation.replace('_Mutation', '').replace(/_/g, ' ');
-        const functionalDesc  = decisionTree.getMutationDescription(newlyAppliedMutation);
-        turnNarratives.push(`[GENETIC ALTERATION] Pathogen expressed: "${structuralName}"`);
-        turnNarratives.push(` -> Effect Profile: ${functionalDesc}`);
-      }
-
-      // ── Clean-round streak + severity decrease ────────────────────────────
-      // A "clean round" = no new BFS spread AND no uncontested mutations
+      // ── Clean-round streak + severity decrease ───────────────────────────────
       const isCleanRound = !spreadOccurred && wasContested;
       if (isCleanRound) {
         next.cleanRoundsStreak += 1;
         const decrease = Math.min(next.cleanRoundsStreak * 2, 6);
         next.severityIndex = Math.max(0, next.severityIndex - decrease);
-        turnNarratives.push(
-          `[RECOVERY] Clean round! Streak: ${next.cleanRoundsStreak}. ` +
-          `Host immune system reclaiming ground: -${decrease}% Severity.`
-        );
+        turnNarratives.push(`[RECOVERY] Clean round! Streak: ${next.cleanRoundsStreak}. Host immune system reclaiming ground: -${decrease}% Severity.`);
       } else {
         next.cleanRoundsStreak = 0;
       }
 
-      // ── Phase 9: Weighted Response System scoring ─────────────────────────
       const dominantDefense = wrs.evaluateAndScore(next);
 
-      // ── Diagnostic totals ──────────────────────────────────────────────────
-      turnNarratives.push(
-        `[DIAGNOSTIC TOTALS] Active mutations in payload genome: ${next.activeMutations.length}`
-      );
+      turnNarratives.push(`[DIAGNOSTIC TOTALS] Active mutations in payload genome: ${next.activeMutations.length}`);
       turnNarratives.push(`==================================================\n`);
 
-      // Push the raw turn log lines first
       next.logFeed.push(...turnNarratives);
 
-      // ── Phase 11b: RL Q-table update ──────────────────────────────────────
-      // FIXED: now fires AFTER full round resolution (was before BFS spread)
       rlEngine.updateQTable(next);
 
-      // ── Narrative Engine: round summary ───────────────────────────────────
-      // Populates state.currentTurnContext AND appends formatted banner to logFeed.
-      // This is the popup workaround — when modal UI is ready, it reads
-      // state.currentTurnContext directly and injectContextToLogFeed can be removed.
       NarrativeEngine.generateRoundSummary(
         prevSnapshot,
         next,
