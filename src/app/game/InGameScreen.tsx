@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
 import { useState } from "react";
 import BodyImage from "../../imports/Body.png";
+import { SettingsModal } from "../components/SettingsModal";
 
 type Difficulty = 'CASUAL' | 'EPIDEMIC' | 'PANDEMIC';
 
@@ -11,7 +12,7 @@ interface InGameScreenProps {
   round: number;
   onUseAction: (cost: number) => void;
   onNextRound: () => void;
-  onQuitToMenu: () => void; // Added for Task 1
+  onQuitToMenu: () => void;
 }
 
 export function InGameScreen({
@@ -21,13 +22,13 @@ export function InGameScreen({
   round,
   onUseAction,
   onNextRound,
-  onQuitToMenu // Destructured here
+  onQuitToMenu
 }: InGameScreenProps) {
   const [showPause, setShowPause] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [infectionRate] = useState(34);
   const [activeMutation] = useState("ANTIGENIC DRIFT");
   
-  // Restored your 6 Organ Zones
   const [organs] = useState([
     { name: 'BRAIN', infection: 15, color: '#7F77DD' },
     { name: 'LUNGS', infection: 65, color: '#1D9E75' },
@@ -37,7 +38,6 @@ export function InGameScreen({
     { name: 'BLOODSTREAM', infection: 45, color: '#E24B4A' }
   ]);
 
-  // Restored your updated EP costs
   const actions = [
     { name: 'Deploy White Blood Cells', description: 'Deploy immune cells to fight virus', cost: 10, color: '#1D9E75' },
     { name: 'Release Antibodies', description: 'Generate antibodies to neutralize virus', cost: 25, color: '#378ADD' },
@@ -97,9 +97,7 @@ export function InGameScreen({
                   animate={{ width: `${severity}%` }}
                   transition={{ duration: 0.5 }}
                   className="h-full"
-                  style={{
-                    background: severity > 50 ? '#E24B4A' : '#1D9E75'
-                  }}
+                  style={{ background: severity > 50 ? '#E24B4A' : '#1D9E75' }}
                 />
               </div>
               <div className="absolute right-2 top-0 bottom-0 flex items-center">
@@ -151,10 +149,7 @@ export function InGameScreen({
               {organs.map((organ, index) => (
                 <div key={index}>
                   <div className="flex items-center gap-2 mb-1">
-                    <div
-                      className="w-3 h-3 rounded-sm"
-                      style={{ backgroundColor: organ.color }}
-                    />
+                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: organ.color }} />
                     <div className="text-[#5DCAA5] text-xs">{organ.name}</div>
                   </div>
                   <div className="w-full h-2 bg-[#0a1f12] border border-[#1a3a2a] rounded-sm overflow-hidden">
@@ -171,7 +166,7 @@ export function InGameScreen({
             </div>
           </div>
 
-          {/* Next Round Button - Always clickable */}
+          {/* Next Round Button */}
           <motion.button
             onClick={onNextRound}
             whileHover={{
@@ -223,7 +218,6 @@ export function InGameScreen({
                   backgroundColor: canAfford ? '#0a1f12' : '#0a1210'
                 }}
               >
-                {/* Header */}
                 <div
                   className="px-3 py-2 border-b"
                   style={{
@@ -236,7 +230,6 @@ export function InGameScreen({
                   </div>
                 </div>
 
-                {/* Body */}
                 <div className="p-3">
                   <div className="text-[#5DCAA5] text-xs mb-2">{action.description}</div>
                   <div className="flex items-center justify-between">
@@ -251,7 +244,7 @@ export function InGameScreen({
       </div>
 
       {/* Pause Menu Overlay */}
-      {showPause && (
+      {showPause && !showSettings && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -266,11 +259,14 @@ export function InGameScreen({
               >
                 RESUME
               </button>
-              <button className="w-full py-3 border border-[#3d6b55] text-[#3d6b55] font-bold tracking-[3px] text-sm rounded-sm hover:border-[#1D9E75] hover:text-[#1D9E75] transition-colors">
+              
+              <button 
+                onClick={() => setShowSettings(true)}
+                className="w-full py-3 border border-[#3d6b55] text-[#3d6b55] font-bold tracking-[3px] text-sm rounded-sm hover:border-[#1D9E75] hover:text-[#1D9E75] transition-colors"
+              >
                 SETTINGS
               </button>
               
-              {/* Hooked up to onQuitToMenu */}
               <button 
                 onClick={onQuitToMenu}
                 className="w-full py-3 border border-[#E24B4A] text-[#E24B4A] font-bold tracking-[3px] text-sm rounded-sm hover:bg-[#E24B4A] hover:text-white transition-colors"
@@ -280,6 +276,14 @@ export function InGameScreen({
             </div>
           </div>
         </motion.div>
+      )}
+
+      {/* Settings Modal Overlay */}
+      {showSettings && (
+        <SettingsModal 
+          onClose={() => setShowSettings(false)} 
+          difficulty={difficulty} 
+        />
       )}
     </motion.div>
   );
