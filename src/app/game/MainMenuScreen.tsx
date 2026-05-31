@@ -1,10 +1,15 @@
+// src/app/game/MainMenuScreen.tsx
 import { motion } from "motion/react";
+import { useState } from "react";
+import { SettingsModal } from "../components/SettingsModal";
 
 interface MainMenuScreenProps {
   onStartGame: () => void;
 }
 
 export function MainMenuScreen({ onStartGame }: MainMenuScreenProps) {
+  const [showSettings, setShowSettings] = useState(false);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -78,16 +83,24 @@ export function MainMenuScreen({ onStartGame }: MainMenuScreenProps) {
           <div className="absolute bottom-1 right-1 w-4 h-4 border-r-2 border-b-2 border-[#1D9E75]" />
         </motion.button>
 
+        {/* Upgraded Settings Button */}
         <motion.button
-          whileHover={{ scale: 1.02 }}
-          className="w-96 h-14 bg-transparent border border-[#1a3a2a] rounded-sm flex items-center justify-center"
+          onClick={() => setShowSettings(true)}
+          whileHover={{
+            scale: 1.05,
+            backgroundColor: "#1D9E75",
+            boxShadow: "0 0 30px rgba(29, 158, 117, 0.5)"
+          }}
+          whileTap={{ scale: 0.95 }}
+          className="w-96 h-14 bg-transparent border border-[#1a3a2a] rounded-sm flex items-center justify-center group transition-all duration-300"
         >
-          <span className="text-[#3d6b55] text-sm tracking-[6px]">SETTINGS</span>
+          <span className="text-[#3d6b55] group-hover:text-[#050d0a] group-hover:font-bold text-sm tracking-[6px] transition-colors">SETTINGS</span>
         </motion.button>
 
+        {/* Terminate Button */}
         <motion.button
           whileHover={{ scale: 1.02 }}
-          className="w-96 h-14 bg-transparent border border-[#1a3a2a] rounded-sm flex items-center justify-center"
+          className="w-96 h-14 bg-transparent border border-[#1a3a2a] rounded-sm flex items-center justify-center hover:border-[#3d6b55] transition-colors"
         >
           <span className="text-[#3d6b55] text-sm tracking-[6px]">TERMINATE</span>
         </motion.button>
@@ -101,6 +114,11 @@ export function MainMenuScreen({ onStartGame }: MainMenuScreenProps) {
         </div>
         <span className="text-[#1D9E75] text-xs tracking-[2px] opacity-50">v1.0.0 // BSCS 3-1</span>
       </div>
+
+      {/* Settings Modal Overlay */}
+      {showSettings && (
+        <SettingsModal onClose={() => setShowSettings(false)} />
+      )}
     </motion.div>
   );
 }
