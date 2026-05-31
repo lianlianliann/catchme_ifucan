@@ -1,8 +1,9 @@
 import { motion } from "motion/react";
 import { useState, useEffect, useRef } from "react";
-import BodyImage from "../../imports/Body.png";
 import { useGame } from "../../context/GameContext";
 import { DEFENSE_EP_COSTS, RECLAMATION_THRESHOLD } from "../../game_logic/GameLogic";
+import { SettingsModal } from "../components/SettingsModal";
+import BodyMap from "../components/BodyMap";
 
 interface InGameScreenProps {
   onNextRound: () => void;
@@ -12,6 +13,7 @@ interface InGameScreenProps {
 export function InGameScreen({ onNextRound, onQuitToMenu }: InGameScreenProps) {
   const { state, deployDefenseUnit } = useGame();
   const [showPause, setShowPause] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [selectedZone, setSelectedZone] = useState<string>("Lungs");
   const logEndRef = useRef<HTMLDivElement>(null);
 
@@ -29,6 +31,26 @@ export function InGameScreen({ onNextRound, onQuitToMenu }: InGameScreenProps) {
   ];
 
   const organNames = Object.keys(state.organGraph.zones);
+
+  // Map the live GameContext state to match the teammate's BodyMap Prop requirement
+  // This translates reclamation progress into an infection percentage (0-100)
+  const mappedOrgansForBodyMap = Object.values(state.organGraph.zones).map((organ: any) => {
+    let infectionPercentage = 0;
+    
+    if (organ.isInfected) {
+      // Calculate how far along the cure is. (e.g., 5 / 10 = 0.5 = 50% cured)
+      const cureProgress = (organ.reclamationProgress / RECLAMATION_THRESHOLD) * 100;
+      
+      // Infection is the inverse of the cure progress (e.g., 50% cured = 50% infected)
+      // Math.max ensures it doesn't drop below 1% until it is fully cured (isInfected = false).
+      infectionPercentage = Math.max(1, 100 - cureProgress);
+    }
+
+    return {
+      name: organ.name.toUpperCase(),
+      infection: Math.round(infectionPercentage)
+    };
+  });
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-screen bg-[#050d0a] p-4 flex flex-col">
@@ -102,7 +124,6 @@ export function InGameScreen({ onNextRound, onQuitToMenu }: InGameScreenProps) {
                     <div className="text-[10px] text-[#3d6b55]">Defenses: {organ.activeDefenseCount}</div>
                   </div>
                   
-                  {/* NEW: Reclamation Progress Bar (Only visible when zone is infected) */}
                   {organ.isInfected && (
                     <div className="w-full h-1 bg-[#0a1f12] border border-[#1a3a2a] rounded-sm overflow-hidden">
                       <motion.div 
@@ -124,8 +145,9 @@ export function InGameScreen({ onNextRound, onQuitToMenu }: InGameScreenProps) {
 
         {/* Center - Body Map & Terminal */}
         <div className="flex-1 flex flex-col gap-4">
-          <div className="flex-1 flex items-center justify-center border-2 border-[#1a3a2a] rounded-sm bg-[#0a1f12] bg-opacity-30 relative p-4">
-            <img src={BodyImage} alt="Human body infection map" className="max-w-full max-h-[500px] object-contain" />
+          <div className="flex-1 flex items-center justify-center border-2 border-[#1a3a2a] rounded-sm bg-[#0a1f12] bg-opacity-30 relative p-4 overflow-hidden">
+            {/* Teammate's Component dynamically fed by Main's state */}
+            <BodyMap organs={mappedOrgansForBodyMap} />
           </div>
           
           <div className="h-48 border-2 border-[#1a3a2a] bg-[#050d0a] rounded-sm p-4 overflow-y-auto font-mono text-xs">
@@ -181,16 +203,26 @@ export function InGameScreen({ onNextRound, onQuitToMenu }: InGameScreenProps) {
         </div>
       </div>
 
-      {showPause && (
+      {/* Pause Menu Overlay with Settings Integration */}
+      {showPause && !showSettings && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 bg-[#050d0a] bg-opacity-90 flex items-center justify-center z-50">
           <div className="bg-[#0a1f12] border-2 border-[#1D9E75] rounded-sm p-8 w-96">
             <h2 className="text-[#1D9E75] text-2xl font-bold tracking-[4px] mb-6 text-center">PAUSED</h2>
             <div className="space-y-3">
               <button onClick={() => setShowPause(false)} className="w-full py-3 bg-[#1D9E75] text-[#050d0a] font-bold tracking-[3px] text-sm rounded-sm hover:bg-[#2DB88A] transition-colors">RESUME</button>
+              <button onClick={() => setShowSettings(true)} className="w-full py-3 border border-[#3d6b55] text-[#3d6b55] font-bold tracking-[3px] text-sm rounded-sm hover:border-[#1D9E75] hover:text-[#1D9E75] transition-colors">SETTINGS</button>
               <button onClick={onQuitToMenu} className="w-full py-3 border border-[#E24B4A] text-[#E24B4A] font-bold tracking-[3px] text-sm rounded-sm hover:bg-[#E24B4A] hover:text-white transition-colors">QUIT TO MENU</button>
             </div>
           </div>
         </motion.div>
+      )}
+
+      {/* Settings Modal Overlay */}
+      {showSettings && (
+        <SettingsModal
+          onClose={() => setShowSettings(false)}
+          difficulty={state.difficulty}
+        />
       )}
     </motion.div>
   );
