@@ -16,6 +16,7 @@ export interface OrganZone {
   activeDefenseCount: number;
   isInfected: boolean;
   epGeneration: number;
+  reclamationProgress: number; 
 }
 
 export interface OrganGraph {
@@ -25,8 +26,29 @@ export interface OrganGraph {
 
 export type DifficultyMode = 'Casual' | 'Epidemic' | 'Pandemic';
 
+// ─── NEW: Zone Reclamation Constants ─────────────────────────────────────────
+export const RECLAMATION_THRESHOLD = 10; // Total pressure points needed to clear a zone
+
+export const ZONE_RESISTANCE: Record<string, number> = {
+  Lungs: 2,
+  Bloodstream: 3,
+  LymphNodes: 4,
+  Gut: 3,
+  Heart: 4,
+  Brain: 5,
+};
+
+// Determines how much the overall Infection Rate drops when a zone is cured
+export const ZONE_INFECTION_WEIGHT: Record<string, number> = {
+  Lungs: 1,
+  Bloodstream: 1,
+  LymphNodes: 1,
+  Gut: 1,
+  Heart: 2,
+  Brain: 3,
+};
+
 // ─── Canonical EP costs (single source of truth) ────────────────────────────
-// Proposal Table 1. All UI callers must read from here, not hardcode values.
 export const DEFENSE_EP_COSTS: Record<string, number> = {
   WhiteBloodCells: 10,
   Antibodies:      25,
@@ -36,27 +58,35 @@ export const DEFENSE_EP_COSTS: Record<string, number> = {
   CytokineBurst:   50,
 };
 
-// Cytokine Burst also deals +10% severity to the host (proposal rule)
 export const CYTOKINE_SEVERITY_PENALTY = 10;
 
-// ─── Biological cooldown per defense type (rounds before reuse allowed) ──────
-// Scientific basis documented in audit:
-//   WBCs       – 1 round  (rapid bone marrow output)
-//   Antibodies – 2 rounds (B-cell activation lag)
-//   Inflammation–2 rounds (tissue recovery window)
-//   FeverResponse–3 rounds(metabolic cost; consecutive fever is dangerous)
-//   MemoryCells – 3 rounds (clonal expansion is slow)
-//   CytokineBurst–3 rounds (cytokine storm recovery / autoimmune risk)
-export const DEFENSE_COOLDOWNS: Record<string, number> = {
-  WhiteBloodCells: 1,
-  Antibodies:      2,
-  Inflammation:    2,
-  FeverResponse:   3,
-  MemoryCells:     3,
-  CytokineBurst:   3,
+export const DEFENSE_COOLDOWNS: Record<DifficultyMode, Record<string, number>> = {
+  Casual: {
+    WhiteBloodCells: 0, 
+    Antibodies:      1,
+    Inflammation:    1,
+    FeverResponse:   2,
+    MemoryCells:     2,
+    CytokineBurst:   2,
+  },
+  Epidemic: {
+    WhiteBloodCells: 1, 
+    Antibodies:      2,
+    Inflammation:    2,
+    FeverResponse:   3,
+    MemoryCells:     3,
+    CytokineBurst:   3,
+  },
+  Pandemic: {
+    WhiteBloodCells: 2, 
+    Antibodies:      3,
+    Inflammation:    3,
+    FeverResponse:   4,
+    MemoryCells:     4,
+    CytokineBurst:   4,
+  }
 };
 
-// ─── Structured narrative context (workaround while popup UI is unavailable) ─
 export interface TurnContext {
   title: string;
   virusActions: string[];
@@ -65,7 +95,7 @@ export interface TurnContext {
 }
 
 export interface DifficultySettings {
-  minimaxDepth: number;           // Corrected: Casual=2, Epidemic=4, Pandemic=6
+  minimaxDepth: number;           
   bfsSpreadThreshold: number;
   epPerHealthyOrgan: number;
   startingInfectionZones: number;
@@ -79,7 +109,7 @@ export interface DifficultySettings {
 
 export const DIFFICULTY_SETTINGS: Record<DifficultyMode, DifficultySettings> = {
   Casual: {
-    minimaxDepth: 2,               // unchanged
+    minimaxDepth: 2,               
     bfsSpreadThreshold: 2,
     epPerHealthyOrgan: 5,
     startingInfectionZones: 1,
@@ -91,7 +121,7 @@ export const DIFFICULTY_SETTINGS: Record<DifficultyMode, DifficultySettings> = {
     qTableFilePath: "q_table_casual.json"
   },
   Epidemic: {
-    minimaxDepth: 4,               // FIXED: was 3, proposal specifies 4
+    minimaxDepth: 4,               
     bfsSpreadThreshold: 3,
     epPerHealthyOrgan: 4,
     startingInfectionZones: 2,
@@ -103,7 +133,7 @@ export const DIFFICULTY_SETTINGS: Record<DifficultyMode, DifficultySettings> = {
     qTableFilePath: "q_table_epidemic.json"
   },
   Pandemic: {
-    minimaxDepth: 6,               // FIXED: was 4, proposal specifies 6
+    minimaxDepth: 6,               
     bfsSpreadThreshold: 5,
     epPerHealthyOrgan: 3,
     startingInfectionZones: 3,
@@ -130,62 +160,35 @@ export interface GameState {
   minimaxRecommendedTarget: string | null;
   logFeed: string[];
   gameStatus: 'IN_PROGRESS' | 'WIN' | 'LOSS';
-
-  // ── NEW: structured narrative context ─────────────────────────────────────
-  // Populated by NarrativeEngine at game start and end of each round.
-  // When popup UI is ready, it reads directly from this field.
-  // Until then, the same content is mirrored into logFeed as formatted text.
   currentTurnContext: TurnContext | null;
-
-  // ── NEW: spam prevention ──────────────────────────────────────────────────
-  // defenseCooldowns: rounds remaining before a defense type can be redeployed.
-  //   Decremented by 1 each round in processTurnSequence.
-  //   Set to DEFENSE_COOLDOWNS[type] when a defense is deployed.
   defenseCooldowns: Record<string, number>;
-
-  // defenseUsedThisRound: how many times each defense has been deployed
-  //   in the CURRENT round (resets to {} each round).
-  //   Used to calculate the escalating EP surcharge (+50% per repeat use).
   defenseUsedThisRound: Record<string, number>;
-
-  // ── NEW: clean-round severity decrease ───────────────────────────────────
-  // Consecutive rounds with no new infections and no uncontested mutations.
-  // After 1 clean round: -2% severity. After 2: -4%. Capped at -6% per round.
   cleanRoundsStreak: number;
 }
 
-// ─── Helper: organ flavour text (unchanged) ──────────────────────────────────
 export function getOrganSymptomText(zoneName: string, isInitial: boolean): string {
   const stage = isInitial ? "Infiltration Base established" : "Severe Degradation";
   switch (zoneName) {
-    case "Lungs":
-      return `[Lungs] ${stage}: Alveolar cellular spaces compromised. Patient experiencing breathing difficulties and tissue fluid inflammation.`;
-    case "Bloodstream":
-      return `[Bloodstream] ${stage}: Viral colonies using arterial channels to rapidly accelerate pathogen load dispersal.`;
-    case "LymphNodes":
-      return `[Lymph Nodes] ${stage}: Swelling inside deep lymphatic filters. Immune cell synthesis is running under high stress.`;
-    case "Gut":
-      return `[Gut] ${stage}: Epithelial tight-junctions disrupted. Intestinal processing degraded, lowering baseline player turn EP.`;
-    case "Heart":
-      return `[Heart] ${stage}: Cardiac microvascular strain observed. Host resting parameter spikes into heavy tachycardia boundaries.`;
-    case "Brain":
-      return `[Brain] 🚨 CRITICAL: Blood-Brain barrier broken. Central nervous tissue under direct attack, triggering cognitive failures.`;
-    default:
-      return `[${zoneName}] Tissue integrity compromised under pathogen replication load.`;
+    case "Lungs": return `[Lungs] ${stage}: Alveolar cellular spaces compromised. Patient experiencing breathing difficulties and tissue fluid inflammation.`;
+    case "Bloodstream": return `[Bloodstream] ${stage}: Viral colonies using arterial channels to rapidly accelerate pathogen load dispersal.`;
+    case "LymphNodes": return `[Lymph Nodes] ${stage}: Swelling inside deep lymphatic filters. Immune cell synthesis is running under high stress.`;
+    case "Gut": return `[Gut] ${stage}: Epithelial tight-junctions disrupted. Intestinal processing degraded, lowering baseline player turn EP.`;
+    case "Heart": return `[Heart] ${stage}: Cardiac microvascular strain observed. Host resting parameter spikes into heavy tachycardia boundaries.`;
+    case "Brain": return `[Brain] 🚨 CRITICAL: Blood-Brain barrier broken. Central nervous tissue under direct attack, triggering cognitive failures.`;
+    default: return `[${zoneName}] Tissue integrity compromised under pathogen replication load.`;
   }
 }
 
-// ─── Initial state builder ───────────────────────────────────────────────────
 export function buildInitialState(difficulty: DifficultyMode): GameState {
   const settings = DIFFICULTY_SETTINGS[difficulty];
   const organGraph: OrganGraph = {
     zones: {
-      Lungs:       { name: 'Lungs',       epGeneration: 5,  activeDefenseCount: 0, isInfected: false },
-      Bloodstream: { name: 'Bloodstream', epGeneration: 10, activeDefenseCount: 0, isInfected: false },
-      LymphNodes:  { name: 'LymphNodes',  epGeneration: 15, activeDefenseCount: 0, isInfected: false },
-      Gut:         { name: 'Gut',         epGeneration: 8,  activeDefenseCount: 0, isInfected: false },
-      Heart:       { name: 'Heart',       epGeneration: 6,  activeDefenseCount: 0, isInfected: false },
-      Brain:       { name: 'Brain',       epGeneration: 3,  activeDefenseCount: 0, isInfected: false },
+      Lungs:       { name: 'Lungs',       epGeneration: 5,  activeDefenseCount: 0, isInfected: false, reclamationProgress: 0 },
+      Bloodstream: { name: 'Bloodstream', epGeneration: 10, activeDefenseCount: 0, isInfected: false, reclamationProgress: 0 },
+      LymphNodes:  { name: 'LymphNodes',  epGeneration: 15, activeDefenseCount: 0, isInfected: false, reclamationProgress: 0 },
+      Gut:         { name: 'Gut',         epGeneration: 8,  activeDefenseCount: 0, isInfected: false, reclamationProgress: 0 },
+      Heart:       { name: 'Heart',       epGeneration: 6,  activeDefenseCount: 0, isInfected: false, reclamationProgress: 0 },
+      Brain:       { name: 'Brain',       epGeneration: 3,  activeDefenseCount: 0, isInfected: false, reclamationProgress: 0 },
     },
     adjacencyList: {
       Lungs:       ['Bloodstream', 'LymphNodes'],
@@ -204,19 +207,27 @@ export function buildInitialState(difficulty: DifficultyMode): GameState {
     `[VIRUS ACTION] A pathogenetic agent has breached primary skin filters.`
   ];
 
+  let initialSeverity = 0;
+
   if (settings.startingInfectionZones === 1) {
     organGraph.zones['Lungs'].isInfected = true;
     logs.push(getOrganSymptomText('Lungs', true));
+    initialSeverity += 5; 
   } else {
     const keys = Object.keys(organGraph.zones);
     const shuffled = [...keys].sort(() => 0.5 - Math.random()).slice(0, settings.startingInfectionZones);
     shuffled.forEach(key => {
       organGraph.zones[key].isInfected = true;
       logs.push(getOrganSymptomText(key, true));
+      
+      initialSeverity += 5; 
+      if (key === 'Brain') {
+        initialSeverity += 25; 
+      }
     });
   }
 
-  logs.push(`[DIAGNOSTIC] Base Severity: 0%. Deploy immune cell structures immediately.`);
+  logs.push(`[DIAGNOSTIC] Base Severity: ${initialSeverity}%. Deploy immune cell structures immediately.`);
   logs.push(`==================================================\n`);
 
   const startingCount = Object.values(organGraph.zones).filter(z => z.isInfected).length;
@@ -225,7 +236,7 @@ export function buildInitialState(difficulty: DifficultyMode): GameState {
     organGraph,
     playerEp: 50,
     infectionRate: startingCount,
-    severityIndex: 0,
+    severityIndex: initialSeverity,
     difficulty,
     roundNumber: 1,
     activeMutations: [],
@@ -235,8 +246,6 @@ export function buildInitialState(difficulty: DifficultyMode): GameState {
     minimaxRecommendedTarget: null,
     logFeed: logs,
     gameStatus: 'IN_PROGRESS',
-
-    // New fields
     currentTurnContext: null,
     defenseCooldowns: {},
     defenseUsedThisRound: {},
