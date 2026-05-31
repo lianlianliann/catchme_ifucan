@@ -11,6 +11,7 @@ interface InGameScreenProps {
   round: number;
   onUseAction: (cost: number) => void;
   onNextRound: () => void;
+  onQuitToMenu: () => void; // Added for Task 1
 }
 
 export function InGameScreen({
@@ -19,27 +20,31 @@ export function InGameScreen({
   difficulty,
   round,
   onUseAction,
-  onNextRound
+  onNextRound,
+  onQuitToMenu // Destructured here
 }: InGameScreenProps) {
   const [showPause, setShowPause] = useState(false);
   const [infectionRate] = useState(34);
   const [activeMutation] = useState("ANTIGENIC DRIFT");
   
-  // Organ infection levels (0-100%)
+  // Restored your 6 Organ Zones
   const [organs] = useState([
-    { name: 'BRAIN', infection: 15, color: '#1D9E75' },
-    { name: 'LUNGS', infection: 65, color: '#E24B4A' },
-    { name: 'HEART', infection: 20, color: '#1D9E75' },
-    { name: 'LYMPH', infection: 70, color: '#EF9F27' }
+    { name: 'BRAIN', infection: 15, color: '#7F77DD' },
+    { name: 'LUNGS', infection: 65, color: '#1D9E75' },
+    { name: 'HEART', infection: 20, color: '#D85A30' },
+    { name: 'LYMPH NODES', infection: 70, color: '#378ADD' },
+    { name: 'GUT', infection: 10, color: '#BA7517' },
+    { name: 'BLOODSTREAM', infection: 45, color: '#E24B4A' }
   ]);
 
+  // Restored your updated EP costs
   const actions = [
-    { name: 'White Blood Cell', description: 'Deploy immune cells to fight virus', cost: 20, color: '#1D9E75' },
-    { name: 'Antibody Production', description: 'Generate antibodies to neutralize virus', cost: 25, color: '#1D9E75' },
-    { name: 'Fever Response', description: 'Raise temperature to slow virus spread', cost: 15, color: '#EF9F27' },
-    { name: 'Inflammation', description: 'Activate inflammatory response', cost: 20, color: '#EF9F27' },
-    { name: 'Macrophage', description: 'Send macrophages to consume virus', cost: 30, color: '#1D9E75' },
-    { name: 'T-Cell Activation', description: 'Activate T-cells for targeted attack', cost: 25, color: '#1D9E75' }
+    { name: 'Deploy White Blood Cells', description: 'Deploy immune cells to fight virus', cost: 10, color: '#1D9E75' },
+    { name: 'Release Antibodies', description: 'Generate antibodies to neutralize virus', cost: 25, color: '#378ADD' },
+    { name: 'Trigger Inflammation', description: 'Activate inflammatory response', cost: 20, color: '#D85A30' },
+    { name: 'Activate Fever Response', description: 'Raise temperature to slow virus spread', cost: 35, color: '#E24B4A' },
+    { name: 'Deploy Memory Cells', description: 'Record virus structure for future', cost: 15, color: '#7F77DD' },
+    { name: 'Cytokine Burst', description: 'Ultimate ability to purge virus', cost: 50, color: '#BA7517' }
   ];
 
   const handleActionClick = (cost: number) => {
@@ -78,7 +83,7 @@ export function InGameScreen({
 
       {/* Main game area */}
       <div className="flex-1 flex gap-4">
-        {/* Left sidebar - HOST STATUS (matching image.png) */}
+        {/* Left sidebar - HOST STATUS */}
         <div className="w-64 space-y-4">
           <div className="text-[#5DCAA5] text-xs tracking-[3px] mb-4">HOST STATUS</div>
           
@@ -264,7 +269,12 @@ export function InGameScreen({
               <button className="w-full py-3 border border-[#3d6b55] text-[#3d6b55] font-bold tracking-[3px] text-sm rounded-sm hover:border-[#1D9E75] hover:text-[#1D9E75] transition-colors">
                 SETTINGS
               </button>
-              <button className="w-full py-3 border border-[#E24B4A] text-[#E24B4A] font-bold tracking-[3px] text-sm rounded-sm hover:bg-[#E24B4A] hover:text-white transition-colors">
+              
+              {/* Hooked up to onQuitToMenu */}
+              <button 
+                onClick={onQuitToMenu}
+                className="w-full py-3 border border-[#E24B4A] text-[#E24B4A] font-bold tracking-[3px] text-sm rounded-sm hover:bg-[#E24B4A] hover:text-white transition-colors"
+              >
                 QUIT TO MENU
               </button>
             </div>
