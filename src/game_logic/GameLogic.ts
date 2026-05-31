@@ -200,35 +200,23 @@ export function buildInitialState(difficulty: DifficultyMode): GameState {
     }
   };
 
-  const logs = [
-    `==================================================`,
-    `🚨 EMERGENCY CASE DIAGNOSTIC INITIALIZED`,
-    `==================================================`,
-    `[VIRUS ACTION] A pathogenetic agent has breached primary skin filters.`
-  ];
-
+  const logs: string[] = []; // Initialized as empty so Round 1 has a blank terminal
   let initialSeverity = 0;
 
   if (settings.startingInfectionZones === 1) {
     organGraph.zones['Lungs'].isInfected = true;
-    logs.push(getOrganSymptomText('Lungs', true));
     initialSeverity += 5; 
   } else {
     const keys = Object.keys(organGraph.zones);
     const shuffled = [...keys].sort(() => 0.5 - Math.random()).slice(0, settings.startingInfectionZones);
     shuffled.forEach(key => {
       organGraph.zones[key].isInfected = true;
-      logs.push(getOrganSymptomText(key, true));
-      
       initialSeverity += 5; 
       if (key === 'Brain') {
         initialSeverity += 25; 
       }
     });
   }
-
-  logs.push(`[DIAGNOSTIC] Base Severity: ${initialSeverity}%. Deploy immune cell structures immediately.`);
-  logs.push(`==================================================\n`);
 
   const startingCount = Object.values(organGraph.zones).filter(z => z.isInfected).length;
 

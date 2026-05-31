@@ -5,6 +5,9 @@ import { DEFENSE_EP_COSTS, RECLAMATION_THRESHOLD } from "../../game_logic/GameLo
 import { SettingsModal } from "../components/SettingsModal";
 import BodyMap from "../components/BodyMap";
 
+// Global tracker to persist acknowledgment state across React screen transitions
+let globalAcknowledgedCount = 0;
+
 interface InGameScreenProps {
   onNextRound: () => void;
   onQuitToMenu: () => void;
@@ -12,15 +15,58 @@ interface InGameScreenProps {
 
 export function InGameScreen({ onNextRound, onQuitToMenu }: InGameScreenProps) {
   const { state, deployDefenseUnit } = useGame();
+  
+  // Reset the global tracker if the game is restarted from Round 1
+  if (state.roundNumber === 1 && globalAcknowledgedCount > 0) {
+    globalAcknowledgedCount = 0;
+  }
+
+  // ─── UI & Pop-up States ────────────────────────────────────────────────────────
+  const [showRoundBanner, setShowRoundBanner] = useState(true); // Always true on mount
+  const [showStartPopup, setShowStartPopup] = useState(false);
+  const [mutationPopup, setMutationPopup] = useState<string | null>(null);
+  
+  // Initialize sidebar with only the mutations we've clicked "ACKNOWLEDGE" on
+  const [acknowledgedMutations, setAcknowledgedMutations] = useState<string[]>(
+    state.activeMutations.slice(0, globalAcknowledgedCount)
+  );
+
+  const [isLogMaximized, setIsLogMaximized] = useState(false);
   const [showPause, setShowPause] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [selectedZone, setSelectedZone] = useState<string>("Lungs");
+  
   const logEndRef = useRef<HTMLDivElement>(null);
 
+  // ─── Effects & Logic ───────────────────────────────────────────────────────────
+  
+  // Auto-scroll the terminal log
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [state.logFeed]);
+  }, [state.logFeed, isLogMaximized]);
 
+  // Handle the Mount Sequence (Banner -> Popups)
+  useEffect(() => {
+    // Drop the Round Banner after 1.5 seconds
+    const t1 = setTimeout(() => {
+      setShowRoundBanner(false);
+      
+      // If it's round 1, show the emergency popup
+      if (state.roundNumber === 1) {
+        setShowStartPopup(true);
+      } 
+      // Otherwise, check if a new mutation happened during the telemetry phase
+      else if (state.activeMutations.length > globalAcknowledgedCount) {
+        const newMutation = state.activeMutations[state.activeMutations.length - 1];
+        const displayName = newMutation.replace('_Mutation', '').replace(/_/g, ' ').toUpperCase();
+        setMutationPopup(displayName);
+      }
+    }, 1500);
+
+    return () => clearTimeout(t1);
+  }, []); // Runs exactly once every time the screen mounts (after telemetry)
+
+  // ─── UI Constants ──────────────────────────────────────────────────────────────
   const actions = [
     { id: 'WhiteBloodCells', name: 'White Blood Cell', description: 'Deploy immune cells to patrol the zone', color: '#1D9E75' },
     { id: 'Antibodies', name: 'Antibody Production', description: 'Target specific viral strains', color: '#1D9E75' },
@@ -32,20 +78,12 @@ export function InGameScreen({ onNextRound, onQuitToMenu }: InGameScreenProps) {
 
   const organNames = Object.keys(state.organGraph.zones);
 
-  // Map the live GameContext state to match the teammate's BodyMap Prop requirement
-  // This translates reclamation progress into an infection percentage (0-100)
   const mappedOrgansForBodyMap = Object.values(state.organGraph.zones).map((organ: any) => {
     let infectionPercentage = 0;
-    
     if (organ.isInfected) {
-      // Calculate how far along the cure is. (e.g., 5 / 10 = 0.5 = 50% cured)
       const cureProgress = (organ.reclamationProgress / RECLAMATION_THRESHOLD) * 100;
-      
-      // Infection is the inverse of the cure progress (e.g., 50% cured = 50% infected)
-      // Math.max ensures it doesn't drop below 1% until it is fully cured (isInfected = false).
       infectionPercentage = Math.max(1, 100 - cureProgress);
     }
-
     return {
       name: organ.name.toUpperCase(),
       infection: Math.round(infectionPercentage)
@@ -99,10 +137,11 @@ export function InGameScreen({ onNextRound, onQuitToMenu }: InGameScreenProps) {
           <div>
             <div className="text-[#5DCAA5] text-xs tracking-[2px] mb-2">ACTIVE MUTATIONS</div>
             <div className="border-2 border-[#EF9F27] bg-[#1a0d00] p-2 rounded-sm min-h-[40px]">
-              {state.activeMutations.length === 0 ? (
+              {/* Uses acknowledgedMutations so it waits for the popup to be clicked! */}
+              {acknowledgedMutations.length === 0 ? (
                 <div className="text-[#EF9F27] text-xs tracking-[1px] text-center opacity-50">NONE</div>
               ) : (
-                state.activeMutations.map(m => (
+                acknowledgedMutations.map(m => (
                   <div key={m} className="text-[#EF9F27] text-xs tracking-[1px] text-center font-bold mb-1">
                     {m.replace('_Mutation', '').replace(/_/g, ' ')}
                   </div>
@@ -138,6 +177,7 @@ export function InGameScreen({ onNextRound, onQuitToMenu }: InGameScreenProps) {
             </div>
           </div>
 
+          {/* Restored immediate routing - No artificial delay here! */}
           <motion.button onClick={onNextRound} whileHover={{ scale: 1.05, backgroundColor: "#1D9E75", boxShadow: "0 0 30px rgba(29, 158, 117, 0.5)" }} whileTap={{ scale: 0.95 }} className="w-full py-4 rounded-sm text-sm tracking-[4px] font-bold bg-[#0d2016] border-2 border-[#1D9E75] text-[#1D9E75] transition-all">
             END TURN
           </motion.button>
@@ -146,18 +186,30 @@ export function InGameScreen({ onNextRound, onQuitToMenu }: InGameScreenProps) {
         {/* Center - Body Map & Terminal */}
         <div className="flex-1 flex flex-col gap-4">
           <div className="flex-1 flex items-center justify-center border-2 border-[#1a3a2a] rounded-sm bg-[#0a1f12] bg-opacity-30 relative p-4 overflow-hidden">
-            {/* Teammate's Component dynamically fed by Main's state */}
             <BodyMap organs={mappedOrgansForBodyMap} />
           </div>
           
-          <div className="h-48 border-2 border-[#1a3a2a] bg-[#050d0a] rounded-sm p-4 overflow-y-auto font-mono text-xs">
-            <div className="text-[#5DCAA5] tracking-[2px] mb-2 sticky top-0 bg-[#050d0a] pb-2 border-b border-[#1a3a2a]">&gt; SYSTEM_LOG_FEED</div>
-            {state.logFeed.map((log, i) => (
-              <div key={i} className={`mb-1 ${log.includes('CRITICAL') || log.includes('WARNING') ? 'text-[#E24B4A]' : log.includes('✓') || log.includes('RECLAIMED') ? 'text-[#1D9E75]' : 'text-[#8ba89a]'}`}>
-                {log}
-              </div>
-            ))}
-            <div ref={logEndRef} />
+          <div className="h-48 border-2 border-[#1a3a2a] bg-[#050d0a] rounded-sm p-4 flex flex-col font-mono text-xs transition-colors hover:border-[#3d6b55]">
+            <div className="flex items-center justify-between text-[#5DCAA5] tracking-[2px] mb-2 pb-2 border-b border-[#1a3a2a]">
+              <span>&gt; SYSTEM_LOG_FEED</span>
+              <button 
+                onClick={() => setIsLogMaximized(true)} 
+                className="text-[#3d6b55] hover:text-[#1D9E75] transition-colors"
+                title="Maximize Log"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {state.logFeed.map((log, i) => (
+                <div key={i} className={`mb-1 ${log.includes('CRITICAL') || log.includes('WARNING') || log.includes('✗') ? 'text-[#E24B4A]' : log.includes('✓') || log.includes('RECLAIMED') ? 'text-[#1D9E75]' : 'text-[#8ba89a]'}`}>
+                  {log}
+                </div>
+              ))}
+              <div ref={logEndRef} />
+            </div>
           </div>
         </div>
 
@@ -203,8 +255,96 @@ export function InGameScreen({ onNextRound, onQuitToMenu }: InGameScreenProps) {
         </div>
       </div>
 
-      {/* Pause Menu Overlay with Settings Integration */}
-      {showPause && !showSettings && (
+      {/* ─── ROUND INITIATION BANNER ───────────────────────────────────────── */}
+      {showRoundBanner && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-[#050d0a] z-[80] flex flex-col items-center justify-center">
+          <motion.div
+            animate={{ scale: [1, 1.02, 1] }}
+            transition={{ duration: 1.5, ease: "easeInOut" }}
+            className="flex flex-col items-center"
+          >
+            <div className="text-[#1D9E75] text-xl tracking-[12px] mb-2 font-mono">INITIATING</div>
+            <div className="text-[#e8f5f0] text-7xl font-bold tracking-widest mb-6">
+              ROUND {String(state.roundNumber).padStart(2, '0')}
+            </div>
+            <div className="w-64 h-1 bg-[#1D9E75]"></div>
+          </motion.div>
+        </motion.div>
+      )}
+
+      {/* ─── START POPUP (ROUND 1) ─────────────────────────────────────────── */}
+      {showStartPopup && !showRoundBanner && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 bg-[#050d0a] bg-opacity-95 flex items-center justify-center z-[70]">
+          <div className="bg-[#0a1f12] border-2 border-[#E24B4A] rounded-sm p-8 w-[500px] shadow-[0_0_30px_rgba(226,75,74,0.2)]">
+            <h2 className="text-[#E24B4A] text-2xl font-bold tracking-[4px] mb-4 text-center animate-pulse">
+              🚨 EMERGENCY CASE DIAGNOSTIC INITIALIZED
+            </h2>
+            <div className="text-[#e8f5f0] font-mono text-sm space-y-4 mb-8 text-center border-y border-[#1a3a2a] py-4">
+              <p>A pathogenetic agent has breached primary skin filters.</p>
+              <p>Host body is currently under viral threat.</p>
+              <p className="text-[#EF9F27] font-bold">Awaiting immune system deployment...</p>
+            </div>
+            <button
+              onClick={() => setShowStartPopup(false)}
+              className="w-full py-3 bg-[#E24B4A] text-[#050d0a] font-bold tracking-[3px] text-sm rounded-sm hover:bg-[#ff5c5c] transition-colors"
+            >
+              ACKNOWLEDGE & DEPLOY
+            </button>
+          </div>
+        </motion.div>
+      )}
+
+      {/* ─── MUTATION DETECTED POPUP ──────────────────────────────────────── */}
+      {mutationPopup && !showRoundBanner && (
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="fixed inset-0 bg-[#050d0a] bg-opacity-95 flex items-center justify-center z-[75]">
+          <div className="bg-[#0a1f12] border-2 border-[#EF9F27] rounded-sm p-10 w-[500px] shadow-[0_0_30px_rgba(239,159,39,0.2)] flex flex-col items-center">
+            <div className="text-[#EF9F27] text-xl tracking-[4px] mb-4 flex items-center gap-4">
+              <span>⚠️</span> WARNING <span>⚠️</span>
+            </div>
+            <h2 className="text-[#EF9F27] text-3xl font-bold tracking-[6px] mb-6 text-center">
+              MUTATION INCOMING
+            </h2>
+            <div className="text-[#5DCAA5] text-2xl font-mono font-bold tracking-[2px] mb-10 text-center uppercase">
+              {mutationPopup}
+            </div>
+            <button
+              onClick={() => {
+                globalAcknowledgedCount = state.activeMutations.length;
+                setAcknowledgedMutations(state.activeMutations); // Sync sidebar
+                setMutationPopup(null);
+              }}
+              className="w-full py-3 bg-transparent border border-[#EF9F27] text-[#EF9F27] font-bold tracking-[3px] text-sm rounded-sm hover:bg-[#EF9F27] hover:text-[#050d0a] transition-colors"
+            >
+              ACKNOWLEDGE
+            </button>
+          </div>
+        </motion.div>
+      )}
+
+      {/* MAXIMIZED LOG OVERLAY */}
+      {isLogMaximized && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 bg-[#050d0a] bg-opacity-95 flex items-center justify-center z-[60] p-8">
+          <div className="w-full h-full max-w-5xl border-2 border-[#1D9E75] bg-[#0a1f12] rounded-sm p-6 flex flex-col font-mono text-sm shadow-[0_0_30px_rgba(29,158,117,0.2)]">
+            <div className="flex items-center justify-between text-[#5DCAA5] tracking-[2px] mb-4 pb-4 border-b border-[#1a3a2a]">
+              <span className="text-xl font-bold">&gt; SYSTEM_LOG_FEED</span>
+              <button onClick={() => setIsLogMaximized(false)} className="text-[#E24B4A] hover:text-[#ff5c5c] text-lg font-bold tracking-[2px] transition-colors">
+                [CLOSE]
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto pr-4 space-y-2">
+              {state.logFeed.map((log, i) => (
+                <div key={i} className={`${log.includes('CRITICAL') || log.includes('WARNING') || log.includes('✗') ? 'text-[#E24B4A]' : log.includes('✓') || log.includes('RECLAIMED') ? 'text-[#1D9E75]' : 'text-[#8ba89a]'}`}>
+                  {log}
+                </div>
+              ))}
+              <div ref={logEndRef} />
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* PAUSE MENU */}
+      {showPause && !showSettings && !showStartPopup && !mutationPopup && !showRoundBanner && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 bg-[#050d0a] bg-opacity-90 flex items-center justify-center z-50">
           <div className="bg-[#0a1f12] border-2 border-[#1D9E75] rounded-sm p-8 w-96">
             <h2 className="text-[#1D9E75] text-2xl font-bold tracking-[4px] mb-6 text-center">PAUSED</h2>
@@ -217,12 +357,9 @@ export function InGameScreen({ onNextRound, onQuitToMenu }: InGameScreenProps) {
         </motion.div>
       )}
 
-      {/* Settings Modal Overlay */}
-      {showSettings && (
-        <SettingsModal
-          onClose={() => setShowSettings(false)}
-          difficulty={state.difficulty}
-        />
+      {/* SETTINGS MODAL */}
+      {showSettings && !showStartPopup && !mutationPopup && !showRoundBanner && (
+        <SettingsModal onClose={() => setShowSettings(false)} difficulty={state.difficulty} />
       )}
     </motion.div>
   );
