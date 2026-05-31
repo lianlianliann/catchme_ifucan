@@ -7,12 +7,12 @@ import {
   DEFENSE_EP_COSTS,
   DEFENSE_COOLDOWNS,
   CYTOKINE_SEVERITY_PENALTY,
-} from '../game/GameLogic';
-import { VirusAI }              from '../game/VirusAI';
-import { VirusRL }              from '../game/VirusRL';
-import { DecisionTree }         from '../game/DecisionTree';
-import { WeightedResponseSystem } from '../game/WeightedResponseSystem';
-import { NarrativeEngine }      from '../game/NarrativeEngine';
+} from '../game_logic/GameLogic';
+import { VirusAI }              from '../game_logic/VirusAI';
+import { VirusRL }              from '../game_logic/VirusRL';
+import { DecisionTree }         from '../game_logic/DecisionTree';
+import { WeightedResponseSystem } from '../game_logic/WeightedResponseSystem';
+import { NarrativeEngine }      from '../game_logic/NarrativeEngine';
 
 interface GameContextType {
   state: GameState;
