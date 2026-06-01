@@ -1,4 +1,6 @@
-import { GameState, DIFFICULTY_SETTINGS, getOrganSymptomText } from './GameLogic';
+import { GameState, DIFFICULTY_SETTINGS} from './GameLogic';
+
+const spreadPenalty = 5;
 
 export class VirusAI {
   public executeSpreadVirus(state: GameState): string[] {
@@ -18,11 +20,8 @@ export class VirusAI {
     });
 
     let spreadOccurred = false;
-    
-    // FIX: Capture the queue size so we only process the current layer of infections.
     const initialQueueSize = queue.length;
 
-    // Use a for-loop based on the initial size instead of a while(queue.length > 0) loop
     for (let i = 0; i < initialQueueSize; i++) {
       const current = queue.shift()!;
       if (!graph.adjacencyList[current]) continue;
@@ -43,16 +42,14 @@ export class VirusAI {
           zone.isInfected = true;
           spreadOccurred = true;
           state.infectionRate += 1;
-          state.severityIndex += 5;
+          state.severityIndex += spreadPenalty;
 
           turnNarratives.push(`[BREACH] Virus completely overran tissue limits and flooded the ${zone.name}.`);
-          
+
           if (target === 'Brain') {
             state.severityIndex += 25;
             turnNarratives.push(`[CRITICAL] ⚠ Brain blood barrier broken! Severity spikes an additional +25%!`);
           }
-          
-          // This prevents the virus from cascading through the whole body in one turn.
         }
         visited.add(target);
       }
@@ -68,6 +65,7 @@ export class VirusAI {
   public calculateBestMove(state: GameState, depth: number): string | null {
     let bestScore = -Infinity;
     let bestTargetKey: string | null = null;
+    const spreadPenalty = 5;
 
     for (const [key, zone] of Object.entries(state.organGraph.zones)) {
       if (!zone.isInfected) continue;
@@ -78,7 +76,7 @@ export class VirusAI {
 
         const sim = structuredClone(state);
         sim.organGraph.zones[target].isInfected = true;
-        sim.severityIndex += 5;
+        sim.severityIndex += spreadPenalty;
         if (target === 'Brain') sim.severityIndex += 25;
 
         const score = this.minimax(sim, depth - 1, -Infinity, Infinity, false);
@@ -95,6 +93,7 @@ export class VirusAI {
     if (depth === 0 || state.infectionRate <= 0 || state.severityIndex >= 100) {
       return this.evaluateBoard(state);
     }
+    const spreadPenalty = 5;
 
     if (isMaximizing) {
       let maxEval = -Infinity;
@@ -104,7 +103,7 @@ export class VirusAI {
       for (const move of possibleMoves) {
         const sim = structuredClone(state);
         sim.organGraph.zones[move.to].isInfected = true;
-        sim.severityIndex += 5;
+        sim.severityIndex += spreadPenalty;
         if (move.to === 'Brain') sim.severityIndex += 25;
 
         const evalScore = this.minimax(sim, depth - 1, alpha, beta, false);

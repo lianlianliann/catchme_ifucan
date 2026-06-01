@@ -281,10 +281,10 @@ export class NarrativeEngine {
         if (underPressure)
           return `[Bloodstream] Immune complexes clearing arterial channels. Pathogen density declining in peripheral circulation.`;
         if (isLate)
-          return `[Bloodstream] Systemic viremia sustained. Pathogen now seeding distant tissue via arterial flow — secondary infection risk elevated.`;
+          return `[Bloodstream] Systemic viremia sustained. Pathogen is now hitching rides through every arterial loop — organs that were clean are being seeded from the inside.`;
         if (isMid)
-          return `[Bloodstream] Viral particles circulating at detectable titres. Coagulation markers showing early inflammatory cascade signs.`;
-        return `[Bloodstream] Infiltration: Pathogen seeding arterial loops, triggering early systemic cytokine activity.`;
+          return `[Bloodstream] Viral titre rising in peripheral blood. Coagulation markers are spiking — the body is trying to wall off what it can't kill.`;
+        return `[Bloodstream] Breach confirmed. The virus has reached the body's main highway — every heartbeat is carrying it deeper into uninfected territory.`;
       }
       case "LymphNodes": {
         const hasAntigenic = activeMutations.some(m => m.includes('Antigenic'));

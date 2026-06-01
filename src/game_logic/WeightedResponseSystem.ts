@@ -1,19 +1,49 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // WeightedResponseSystem.ts
-// Changes from previous version:
-//  1. evaluateAndScore return type changed from `string | null` to `string | null`
-//     (was already typed this way but returned value was unused — GameContext
-//      now captures and forwards it to NarrativeEngine.generateRoundSummary)
-//  No logic changes — all base effectiveness values and context multipliers
-//  are unchanged from the original.
+// Changes:
+//  1. evaluateAndScore now also builds and stores DefenseScore[] on state
+//     (state.lastDefenseScores) so the UI can render an Immune Efficacy Report
+//  2. Returns { dominantDefense, scores } instead of just the dominant key
+//     (GameContext still only needs dominantDefense for NarrativeEngine)
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { GameState } from './GameLogic';
+import { GameState, DefenseScore } from './GameLogic';
+
+// Human-readable names for UI display
+const DEFENSE_DISPLAY_NAMES: Record<string, string> = {
+  WhiteBloodCells: "White Blood Cells",
+  Antibodies:      "Antibodies",
+  Inflammation:    "Inflammation",
+  FeverResponse:   "Fever Response",
+  MemoryCells:     "Memory Cells",
+  CytokineBurst:   "Cytokine Burst",
+};
+
+// Mutation descriptions that appear as penalty annotations
+const MUTATION_PENALTY_NOTES: Record<string, Record<string, string>> = {
+  Evade_Phagocytosis_Mutation: {
+    Antibodies:   "Evade Phagocytosis countered — Antibodies boosted",
+    Inflammation: "Evade Phagocytosis countered — Inflammation boosted",
+  },
+  Antigenic_Drift_Mutation: {
+    MemoryCells: "Antigenic Drift active — Memory Cells boosted",
+    Antibodies:  "Antigenic Drift active (−40% efficiency)",
+  },
+  Antigenic_Shift_Mutation: {
+    MemoryCells:    "Antigenic Shift — Memory Cells blinded",
+    CytokineBurst:  "Antigenic Shift countered — Cytokine Burst boosted",
+  },
+  Thermal_Resistance_Mutation: {
+    FeverResponse:    "Thermal Resistance active (−70% efficiency)",
+    WhiteBloodCells:  "Thermal Resistance countered — WBCs boosted",
+  },
+  Heat_Shock_Proteins_Mutation: {
+    FeverResponse: "Heat Shock Proteins active (−80% efficiency)",
+    Antibodies:    "Heat Shock Proteins countered — Antibodies boosted",
+  },
+};
 
 export class WeightedResponseSystem {
-
-  // Base effectiveness per defense type
-  // (calibrated against proposal Table 1 EP costs — higher cost = higher base)
   private static BaseEffectiveness: Record<string, number> = {
     WhiteBloodCells: 1.0,
     Antibodies:      2.5,
@@ -23,8 +53,6 @@ export class WeightedResponseSystem {
     CytokineBurst:   5.0,
   };
 
-  // Context multipliers: active mutations modify defense effectiveness
-  // e.g. Antigenic_Drift weakens Antibodies but boosts MemoryCells
   private static ContextMultipliers: Record<string, Record<string, number>> = {
     Evade_Phagocytosis_Mutation: { Antibodies: 1.5,  Inflammation: 1.3 },
     Antigenic_Drift_Mutation:    { MemoryCells: 2.0, Antibodies: 0.6 },
@@ -33,16 +61,9 @@ export class WeightedResponseSystem {
     Heat_Shock_Proteins_Mutation:{ FeverResponse: 0.2, Antibodies: 1.3 },
   };
 
-  /**
-   * Score each defense the player used this round by weighted effectiveness.
-   * Updates state.lastUsedDefenses with the scores.
-   * Returns the dominant defense key (highest score) or null if nothing was used.
-   * The return value is consumed by GameContext → NarrativeEngine.
-   */
   public evaluateAndScore(state: GameState): string | null {
-    const scores: Record<string, number> = {};
+    const rawScores: Record<string, number> = {};
 
-    // Determine last round's dominant defense for the diminishing-returns penalty
     let lastDominant: string | null = null;
     if (Object.keys(state.lastUsedDefenses).length > 0) {
       lastDominant = Object.entries(state.lastUsedDefenses)
@@ -54,23 +75,44 @@ export class WeightedResponseSystem {
 
       let score = units * WeightedResponseSystem.BaseEffectiveness[defense];
 
-      // Apply mutation context multipliers
       state.activeMutations.forEach(mutation => {
         const mult = WeightedResponseSystem.ContextMultipliers[mutation]?.[defense];
         if (mult !== undefined) score *= mult;
       });
 
-      // Diminishing returns: over-reliance on the previous round's dominant defense
       if (lastDominant && defense === lastDominant) {
         score *= 0.85;
       }
 
-      scores[defense] = score;
+      rawScores[defense] = score;
     });
 
-    state.lastUsedDefenses = scores;
+    state.lastUsedDefenses = rawScores;
 
-    const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+    // ── Build structured DefenseScore[] for UI display ────────────────────
+    const maxScore = Math.max(...Object.values(rawScores), 1);
+    const defenseScores: DefenseScore[] = Object.entries(rawScores).map(([defenseType, score]) => {
+      // Find the most relevant mutation note for this defense
+      let mutationPenalty: string | null = null;
+      for (const mutation of state.activeMutations) {
+        const note = MUTATION_PENALTY_NOTES[mutation]?.[defenseType];
+        if (note) {
+          mutationPenalty = note;
+          break; // show first match only
+        }
+      }
+
+      return {
+        defenseType,
+        score: Math.round((score / maxScore) * 100),  // normalised 0-100
+        mutationPenalty,
+        isEffective: score / maxScore >= 0.5,
+      };
+    }).sort((a, b) => b.score - a.score);
+
+    state.lastDefenseScores = defenseScores;
+
+    const sorted = Object.entries(rawScores).sort((a, b) => b[1] - a[1]);
     return sorted.length > 0 ? sorted[0][0] : null;
   }
 }

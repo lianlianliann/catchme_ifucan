@@ -9,13 +9,14 @@ import {
   CYTOKINE_SEVERITY_PENALTY,
   ZONE_RESISTANCE,
   ZONE_INFECTION_WEIGHT,
-  RECLAMATION_THRESHOLD
+  RECLAMATION_THRESHOLD,
+  computeProjectedEp,
 } from '../game_logic/GameLogic';
-import { VirusAI }              from '../game_logic/VirusAI';
-import { VirusRL }              from '../game_logic/VirusRL';
-import { DecisionTree }         from '../game_logic/DecisionTree';
+import { VirusAI }                from '../game_logic/VirusAI';
+import { VirusRL }                from '../game_logic/VirusRL';
+import { DecisionTree }           from '../game_logic/DecisionTree';
 import { WeightedResponseSystem } from '../game_logic/WeightedResponseSystem';
-import { NarrativeEngine }      from '../game_logic/NarrativeEngine';
+import { NarrativeEngine }        from '../game_logic/NarrativeEngine';
 
 interface GameContextType {
   state: GameState;
@@ -35,7 +36,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
   const [rlEngine, setRlEngine] = useState<VirusRL>(() => new VirusRL('Casual'));
 
   const startNewGame = (difficulty: DifficultyMode) => {
-    const initial = buildInitialState(difficulty);
+    const initial    = buildInitialState(difficulty);
     const withContext = NarrativeEngine.generateInitialContext(structuredClone(initial));
     setState(withContext);
     setRlEngine(new VirusRL(difficulty));
@@ -53,10 +54,10 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         return next;
       }
 
-      const baseEpCost    = DEFENSE_EP_COSTS[defenseType] ?? 0;
-      const timesUsed     = next.defenseUsedThisRound[defenseType] ?? 0;
+      const baseEpCost          = DEFENSE_EP_COSTS[defenseType] ?? 0;
+      const timesUsed           = next.defenseUsedThisRound[defenseType] ?? 0;
       const surchargeMultiplier = Math.pow(1.5, timesUsed);
-      const actualEpCost  = Math.ceil(baseEpCost * surchargeMultiplier);
+      const actualEpCost        = Math.ceil(baseEpCost * surchargeMultiplier);
 
       if (timesUsed > 0) {
         next.logFeed.push(`[DIMINISHING RETURNS] ${defenseType} already used ${timesUsed}× this round. Repeat deployment costs ${actualEpCost} EP.`);
@@ -82,6 +83,9 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
 
       next.logFeed.push(`[PLAYER ACTION] Dispatched ${defenseType} reinforcement units to the ${zoneName}. Cost: ${actualEpCost} EP. Cooldown: ${appliedCooldown} round(s).`);
 
+      // Update projected EP after spending
+      next.projectedEpNextRound = computeProjectedEp(next);
+
       return next;
     });
   };
@@ -91,93 +95,80 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       if (prev.gameStatus !== 'IN_PROGRESS') return prev;
 
       const prevSnapshot = structuredClone(prev);
-      let next = structuredClone(prev);
-      const settings = DIFFICULTY_SETTINGS[next.difficulty];
+      let next           = structuredClone(prev);
+      const settings     = DIFFICULTY_SETTINGS[next.difficulty];
       const turnNarratives: string[] = [];
 
       turnNarratives.push(`\n==================================================`);
       turnNarratives.push(`📋 END-OF-ROUND REPORT: ROUND ${next.roundNumber}`);
       turnNarratives.push(`==================================================`);
 
-      // ── Phase 0: Tick down cooldowns ─────────────────────────────────────────
+      // ── Phase 0: Tick down cooldowns ─────────────────────────────────────
       Object.keys(next.defenseCooldowns).forEach(defType => {
-        if (next.defenseCooldowns[defType] > 0) {
-          next.defenseCooldowns[defType] -= 1;
-        }
+        if (next.defenseCooldowns[defType] > 0) next.defenseCooldowns[defType] -= 1;
       });
       next.defenseUsedThisRound = {};
 
-      // ── Phase 2: EP income generation ────────────────────────────────────────
-      const healthyOrgans = Object.values(next.organGraph.zones).filter(z => !z.isInfected);
-      const organEpGained = healthyOrgans.reduce((total, zone) => total + zone.epGeneration, 0);
-      const baseMetabolism = 10;
-      const totalEpGained = organEpGained + baseMetabolism;
-      next.playerEp += totalEpGained;
+      // ── Phase 2: EP income ────────────────────────────────────────────────
+      const healthyOrgans   = Object.values(next.organGraph.zones).filter(z => !z.isInfected);
+      const organEpGained   = healthyOrgans.reduce((t, z) => t + z.epGeneration, 0);
+      const baseMetabolism  = 10;
+      const totalEpGained   = organEpGained + baseMetabolism;
+      next.playerEp        += totalEpGained;
 
       turnNarratives.push(`[ENERGY BIOMETRICS] +${totalEpGained} EP Recovered. (+${baseMetabolism} Base Metabolism, +${organEpGained} from ${healthyOrgans.length} clean organs).`);
 
-      // ── Phase 3 & 4: RL strategy selection + Minimax evaluation ──────────────
+      // ── Phase 3 & 4: RL + Minimax ─────────────────────────────────────────
       const minimaxSuggestion = virusAI.calculateBestMove(next, settings.minimaxDepth);
       const strategicAction   = rlEngine.selectAction(next, minimaxSuggestion);
       next.minimaxRecommendedTarget = strategicAction;
 
-      // ── Phase 5: BFS spread execution ────────────────────────────────────────
+      // ── Phase 5: BFS spread ───────────────────────────────────────────────
       const spreadLogs    = virusAI.executeSpreadVirus(next);
       const spreadOccurred = spreadLogs.some(l => l.includes('[BREACH]'));
       turnNarratives.push(...spreadLogs);
 
-      // ── Phase 6: Decision Tree mutation ──────────────────────────────────────
+      // ── Phase 6: Decision Tree mutation ───────────────────────────────────
       const newlyAppliedMutation = decisionTree.selectAndApplyMutation(next);
       if (newlyAppliedMutation) {
-        const structuralName  = newlyAppliedMutation.replace('_Mutation', '').replace(/_/g, ' ');
-        const functionalDesc  = decisionTree.getMutationDescription(newlyAppliedMutation);
+        const structuralName = newlyAppliedMutation.replace('_Mutation', '').replace(/_/g, ' ');
+        const functionalDesc = decisionTree.getMutationDescription(newlyAppliedMutation);
         turnNarratives.push(`[GENETIC ALTERATION] Pathogen expressed: "${structuralName}"`);
         turnNarratives.push(` -> Effect Profile: ${functionalDesc}`);
       }
 
-      // ── Phase 7 (MOVED): Zone Reclamation System (The Tug-of-War) ────────────
+      // ── Phase 7: Zone Reclamation ─────────────────────────────────────────
       Object.entries(next.organGraph.zones).forEach(([zoneName, zone]) => {
         if (zone.isInfected) {
-          const defense = zone.activeDefenseCount;
+          const defense    = zone.activeDefenseCount;
           const resistance = ZONE_RESISTANCE[zoneName];
-          const pressure = defense - resistance;
+          const pressure   = defense - resistance;
 
           if (pressure > 0) {
             zone.reclamationProgress += pressure;
-            
-            // Check if the zone has been successfully reclaimed
             if (zone.reclamationProgress >= RECLAMATION_THRESHOLD) {
-              zone.isInfected = false;
-              zone.reclamationProgress = 0;
-              // Retain half the defenses as resident memory cells
-              zone.activeDefenseCount = Math.ceil(zone.activeDefenseCount * 0.5);
-              
-              next.infectionRate = Math.max(0, next.infectionRate - ZONE_INFECTION_WEIGHT[zoneName]);
+              zone.isInfected            = false;
+              zone.reclamationProgress   = 0;
+              zone.activeDefenseCount    = Math.ceil(zone.activeDefenseCount * 0.5);
+              next.infectionRate         = Math.max(0, next.infectionRate - ZONE_INFECTION_WEIGHT[zoneName]);
               turnNarratives.push(`[RECLAIMED] Sustained immune pressure cleared the ${zoneName}! Remaining cells transition to resident memory.`);
             }
           } else {
-            // Virus pushes back, eroding partial reclamation progress
             zone.reclamationProgress = Math.max(0, zone.reclamationProgress + pressure - 1);
           }
         }
       });
 
-      // Safety fallback: if no organs are infected, force infection rate to 0 to trigger the win condition
       const remainingInfected = Object.values(next.organGraph.zones).filter(z => z.isInfected).length;
-      if (remainingInfected === 0) {
-        next.infectionRate = 0;
-      }
+      if (remainingInfected === 0) next.infectionRate = 0;
 
-      // ── Phase 8: Uncontested mutation severity penalty ───────────────────────
+      // ── Phase 8: Uncontested mutation severity penalty ────────────────────
       const mutationPenalty = decisionTree.calculateUncontestedSeverity(next, turnNarratives);
       const wasContested    = mutationPenalty === 0;
-
-      if (mutationPenalty > 0) {
-        next.severityIndex += mutationPenalty;
-      }
+      if (mutationPenalty > 0) next.severityIndex += mutationPenalty;
       next.severityIndex = Math.min(100, Math.max(0, next.severityIndex));
 
-      // ── Win/Loss boundary checks ─────────────────────────────────────────────
+      // ── Win/Loss ──────────────────────────────────────────────────────────
       if (next.infectionRate <= 0) {
         next.gameStatus = 'WIN';
         turnNarratives.push('✓ MISSION SUCCESS — All cellular replication vectors cleared.');
@@ -186,17 +177,17 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (next.severityIndex >= 100) {
-        next.gameStatus = 'LOSS';
-        next.severityIndex = 100;
+        next.gameStatus     = 'LOSS';
+        next.severityIndex  = 100;
         turnNarratives.push('✗ EMERGENCY COLLAPSE — Severity has reached 100% vital shutdown limits.');
         next.logFeed.push(...turnNarratives);
         return next;
       }
 
-      next.roundNumber  += 1;
+      next.roundNumber   += 1;
       next.playerDefenses = {};
 
-      // ── Clean-round streak + severity decrease ───────────────────────────────
+      // ── Clean-round streak + severity decrease ────────────────────────────
       const isCleanRound = !spreadOccurred && wasContested;
       if (isCleanRound) {
         next.cleanRoundsStreak += 1;
@@ -213,6 +204,9 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       turnNarratives.push(`==================================================\n`);
 
       next.logFeed.push(...turnNarratives);
+
+      // ── Update projected EP for next round sidebar display ────────────────
+      next.projectedEpNextRound = computeProjectedEp(next);
 
       rlEngine.updateQTable(next);
 
