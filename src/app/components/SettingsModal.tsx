@@ -1,6 +1,7 @@
 // src/app/components/SettingsModal.tsx
 import { motion } from "motion/react";
 import { useState, useEffect } from "react";
+import { soundManager } from "../../game_logic/SoundManager";
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -13,17 +14,22 @@ export function SettingsModal({ onClose, difficulty }: SettingsModalProps) {
 
   // Load saved settings when the modal opens
   useEffect(() => {
-    const savedVolume = localStorage.getItem('cmiyc_volume');
-    const savedCrt = localStorage.getItem('cmiyc_crt');
-    
-    if (savedVolume !== null) setVolume(Number(savedVolume));
-    if (savedCrt !== null) setCrtFilter(savedCrt === 'true');
+    const savedVolume = localStorage.getItem("cmiyc_volume");
+    const savedCrt = localStorage.getItem("cmiyc_crt");
+
+    if (savedVolume !== null) {
+      const volumeValue = Number(savedVolume);
+      setVolume(volumeValue);
+      soundManager.setMasterVolume(volumeValue / 100);
+    }
+    if (savedCrt !== null) setCrtFilter(savedCrt === "true");
   }, []);
 
   // Save settings and close
   const handleSave = () => {
-    localStorage.setItem('cmiyc_volume', volume.toString());
-    localStorage.setItem('cmiyc_crt', crtFilter.toString());
+    localStorage.setItem("cmiyc_volume", volume.toString());
+    localStorage.setItem("cmiyc_crt", crtFilter.toString());
+    soundManager.setMasterVolume(volume / 100);
     onClose();
   };
 
@@ -34,13 +40,19 @@ export function SettingsModal({ onClose, difficulty }: SettingsModalProps) {
       className="fixed inset-0 bg-[#050d0a] bg-opacity-95 flex items-center justify-center z-[60]"
     >
       <div className="bg-[#0a1f12] border-2 border-[#1D9E75] rounded-sm p-8 w-96 shadow-[0_0_15px_rgba(29,158,117,0.2)]">
-        <h2 className="text-[#1D9E75] text-2xl font-bold tracking-[4px] mb-6 text-center">SYSTEM SETTINGS</h2>
-        
+        <h2 className="text-[#1D9E75] text-2xl font-bold tracking-[4px] mb-6 text-center">
+          SYSTEM SETTINGS
+        </h2>
+
         <div className="space-y-6">
           {difficulty && (
             <div className="pb-4 border-b border-[#1a3a2a]">
-              <div className="text-[#5DCAA5] text-xs tracking-[2px] mb-1">CURRENT DIFFICULTY</div>
-              <div className="text-[#EF9F27] font-bold tracking-[2px]">{difficulty}</div>
+              <div className="text-[#5DCAA5] text-xs tracking-[2px] mb-1">
+                CURRENT DIFFICULTY
+              </div>
+              <div className="text-[#EF9F27] font-bold tracking-[2px]">
+                {difficulty}
+              </div>
             </div>
           )}
 
@@ -49,26 +61,33 @@ export function SettingsModal({ onClose, difficulty }: SettingsModalProps) {
               <span>MASTER VOLUME</span>
               <span>{volume}%</span>
             </div>
-            <input 
-              type="range" 
-              min="0" max="100" 
+            <input
+              type="range"
+              min="0"
+              max="100"
               value={volume}
-              onChange={(e) => setVolume(Number(e.target.value))}
-              className="w-full accent-[#1D9E75]" 
+              onChange={(e) => {
+                const newVolume = Number(e.target.value);
+                setVolume(newVolume);
+                soundManager.setMasterVolume(newVolume / 100);
+              }}
+              className="w-full accent-[#1D9E75]"
             />
           </div>
 
           <div className="flex items-center justify-between pt-2">
-            <div className="text-[#5DCAA5] text-xs tracking-[2px]">CRT SCANLINE FILTER</div>
-            <button 
+            <div className="text-[#5DCAA5] text-xs tracking-[2px]">
+              CRT SCANLINE FILTER
+            </div>
+            <button
               onClick={() => setCrtFilter(!crtFilter)}
               className={`px-4 py-1 border text-xs font-bold tracking-[2px] ${
-                crtFilter 
-                  ? 'bg-[#1D9E75] text-[#050d0a] border-[#1D9E75]' 
-                  : 'border-[#3d6b55] text-[#3d6b55]'
+                crtFilter
+                  ? "bg-[#1D9E75] text-[#050d0a] border-[#1D9E75]"
+                  : "border-[#3d6b55] text-[#3d6b55]"
               }`}
             >
-              {crtFilter ? 'ON' : 'OFF'}
+              {crtFilter ? "ON" : "OFF"}
             </button>
           </div>
         </div>

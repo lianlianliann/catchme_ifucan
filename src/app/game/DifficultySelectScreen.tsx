@@ -1,54 +1,57 @@
 import { motion } from "motion/react";
 import { DifficultyMode } from "../../game_logic/GameLogic";
+import { soundManager } from "../../game_logic/SoundManager";
 
 interface DifficultySelectScreenProps {
   onSelectDifficulty: (difficulty: DifficultyMode) => void;
 }
 
-export function DifficultySelectScreen({ onSelectDifficulty }: DifficultySelectScreenProps) {
+export function DifficultySelectScreen({
+  onSelectDifficulty,
+}: DifficultySelectScreenProps) {
   const difficulties = [
     {
-      id: 'Casual' as const, // Changed to match GameLogic
-      title: 'CASUAL',
-      level: 'I',
-      color: '#1D9E75',
-      bgColor: '#0a1f12',
+      id: "Casual" as const, // Changed to match GameLogic
+      title: "CASUAL",
+      level: "I",
+      color: "#1D9E75",
+      bgColor: "#0a1f12",
       features: [
-        'TURN-BASED',
-        'Mutation telegraphed',
-        'Every 2 rounds',
-        'Generous EP regen',
-        'Entry: Lungs only'
-      ]
+        "TURN-BASED",
+        "Mutation telegraphed",
+        "Every 2 rounds",
+        "Generous EP regen",
+        "Entry: Lungs only",
+      ],
     },
     {
-      id: 'Epidemic' as const, // Changed to match GameLogic
-      title: 'EPIDEMIC',
-      level: 'II',
-      color: '#EF9F27',
-      bgColor: '#0f1a0a',
+      id: "Epidemic" as const, // Changed to match GameLogic
+      title: "EPIDEMIC",
+      level: "II",
+      color: "#EF9F27",
+      bgColor: "#0f1a0a",
       features: [
-        'TURN-BASED',
-        'No mutation warning',
-        'Every round',
-        'Standard EP regen',
-        'Entry: Lungs only'
-      ]
+        "TURN-BASED",
+        "No mutation warning",
+        "Every round",
+        "Standard EP regen",
+        "Entry: Lungs only",
+      ],
     },
     {
-      id: 'Pandemic' as const, // Changed to match GameLogic
-      title: 'PANDEMIC',
-      level: 'III',
-      color: '#E24B4A',
-      bgColor: '#1a0a0a',
+      id: "Pandemic" as const, // Changed to match GameLogic
+      title: "PANDEMIC",
+      level: "III",
+      color: "#E24B4A",
+      bgColor: "#1a0a0a",
       features: [
-        'HYBRID REAL-TIME',
-        'No mutation warning',
-        'Every round',
-        'Reduced EP regen',
-        '3 random entry points'
-      ]
-    }
+        "HYBRID REAL-TIME",
+        "No mutation warning",
+        "Every round",
+        "Reduced EP regen",
+        "3 random entry points",
+      ],
+    },
   ];
 
   return (
@@ -64,7 +67,9 @@ export function DifficultySelectScreen({ onSelectDifficulty }: DifficultySelectS
         animate={{ y: 0, opacity: 1 }}
         className="mb-12 text-center"
       >
-        <div className="text-[#5DCAA5] text-xs tracking-[10px] mb-4 opacity-70">SELECT INFECTION SCENARIO</div>
+        <div className="text-[#5DCAA5] text-xs tracking-[10px] mb-4 opacity-70">
+          SELECT INFECTION SCENARIO
+        </div>
         <div className="w-full h-px bg-[#1D9E75] opacity-30" />
       </motion.div>
 
@@ -76,27 +81,55 @@ export function DifficultySelectScreen({ onSelectDifficulty }: DifficultySelectS
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: index * 0.15 }}
-            onClick={() => onSelectDifficulty(diff.id)}
+            onClick={() => {
+              soundManager.play("button");
+              soundManager.play("roundTransition");
+              onSelectDifficulty(diff.id);
+            }}
             whileHover={{
               scale: 1.05,
-              boxShadow: `0 0 40px ${diff.color}50`
+              boxShadow: `0 0 40px ${diff.color}50`,
             }}
             whileTap={{ scale: 0.98 }}
             className="relative w-72 rounded-sm overflow-hidden"
             style={{
               backgroundColor: diff.bgColor,
-              border: `2px solid ${diff.color}`
+              border: `2px solid ${diff.color}`,
             }}
           >
             {/* Corner brackets */}
-            <div className="absolute top-1 left-1 w-4 h-4 border-l-2 border-t-2" style={{ borderColor: diff.color }} />
-            <div className="absolute top-1 right-1 w-4 h-4 border-r-2 border-t-2" style={{ borderColor: diff.color }} />
-            <div className="absolute bottom-1 left-1 w-4 h-4 border-l-2 border-b-2" style={{ borderColor: diff.color }} />
-            <div className="absolute bottom-1 right-1 w-4 h-4 border-r-2 border-b-2" style={{ borderColor: diff.color }} />
+            <div
+              className="absolute top-1 left-1 w-4 h-4 border-l-2 border-t-2"
+              style={{ borderColor: diff.color }}
+            />
+            <div
+              className="absolute top-1 right-1 w-4 h-4 border-r-2 border-t-2"
+              style={{ borderColor: diff.color }}
+            />
+            <div
+              className="absolute bottom-1 left-1 w-4 h-4 border-l-2 border-b-2"
+              style={{ borderColor: diff.color }}
+            />
+            <div
+              className="absolute bottom-1 right-1 w-4 h-4 border-r-2 border-b-2"
+              style={{ borderColor: diff.color }}
+            />
 
             {/* Header - Updated conditional checks to match Title Case */}
-            <div className="py-4" style={{ backgroundColor: diff.id === 'Casual' ? '#1D9E75' : diff.id === 'Epidemic' ? '#BA7517' : '#A32D2D' }}>
-              <span className={`text-xs tracking-[2px] font-bold ${diff.id === 'Pandemic' ? 'text-white' : 'text-[#050d0a]'}`}>
+            <div
+              className="py-4"
+              style={{
+                backgroundColor:
+                  diff.id === "Casual"
+                    ? "#1D9E75"
+                    : diff.id === "Epidemic"
+                      ? "#BA7517"
+                      : "#A32D2D",
+              }}
+            >
+              <span
+                className={`text-xs tracking-[2px] font-bold ${diff.id === "Pandemic" ? "text-white" : "text-[#050d0a]"}`}
+              >
                 {diff.title}
               </span>
             </div>
@@ -106,7 +139,7 @@ export function DifficultySelectScreen({ onSelectDifficulty }: DifficultySelectS
               {diff.features.map((feature, i) => (
                 <div
                   key={i}
-                  className={`text-xs ${i === 0 ? 'tracking-[2px] font-semibold' : ''}`}
+                  className={`text-xs ${i === 0 ? "tracking-[2px] font-semibold" : ""}`}
                   style={{ color: diff.color }}
                 >
                   {feature}
@@ -114,7 +147,10 @@ export function DifficultySelectScreen({ onSelectDifficulty }: DifficultySelectS
               ))}
 
               {/* Level */}
-              <div className="pt-4 text-4xl font-bold" style={{ color: diff.color }}>
+              <div
+                className="pt-4 text-4xl font-bold"
+                style={{ color: diff.color }}
+              >
                 {diff.level}
               </div>
             </div>
