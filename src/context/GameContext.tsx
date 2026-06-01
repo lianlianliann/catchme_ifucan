@@ -152,7 +152,6 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
               // Retain half the defenses as resident memory cells
               zone.activeDefenseCount = Math.ceil(zone.activeDefenseCount * 0.5);
               
-              next.infectionRate = Math.max(0, next.infectionRate - ZONE_INFECTION_WEIGHT[zoneName]);
               turnNarratives.push(`[RECLAIMED] Sustained immune pressure cleared the ${zoneName}! Remaining cells transition to resident memory.`);
             }
           } else {
@@ -162,11 +161,9 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         }
       });
 
-      // Safety fallback: if no organs are infected, force infection rate to 0 to trigger the win condition
-      const remainingInfected = Object.values(next.organGraph.zones).filter(z => z.isInfected).length;
-      if (remainingInfected === 0) {
-        next.infectionRate = 0;
-      }
+      // FIX: Force sync the infection rate to the EXACT count of actual infected organs (Max 6)
+      // This prevents the number from inflating if VirusAI adds weights instead of counts
+      next.infectionRate = Object.values(next.organGraph.zones).filter(z => z.isInfected).length;
 
       // ── Phase 8: Uncontested mutation severity penalty ───────────────────────
       const mutationPenalty = decisionTree.calculateUncontestedSeverity(next, turnNarratives);

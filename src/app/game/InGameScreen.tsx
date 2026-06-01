@@ -84,8 +84,13 @@ export function InGameScreen({ onNextRound, onQuitToMenu }: InGameScreenProps) {
       const cureProgress = (organ.reclamationProgress / RECLAMATION_THRESHOLD) * 100;
       infectionPercentage = Math.max(1, 100 - cureProgress);
     }
+
+    // FIX: Properly format LymphNodes so it matches BodyMap's lookup key
+    let displayName = organ.name.toUpperCase();
+    if (organ.name === 'LymphNodes') displayName = 'LYMPH NODES';
+
     return {
-      name: organ.name.toUpperCase(),
+      name: displayName,
       infection: Math.round(infectionPercentage)
     };
   });
@@ -137,7 +142,6 @@ export function InGameScreen({ onNextRound, onQuitToMenu }: InGameScreenProps) {
           <div>
             <div className="text-[#5DCAA5] text-xs tracking-[2px] mb-2">ACTIVE MUTATIONS</div>
             <div className="border-2 border-[#EF9F27] bg-[#1a0d00] p-2 rounded-sm min-h-[40px]">
-              {/* Uses acknowledgedMutations so it waits for the popup to be clicked! */}
               {acknowledgedMutations.length === 0 ? (
                 <div className="text-[#EF9F27] text-xs tracking-[1px] text-center opacity-50">NONE</div>
               ) : (
@@ -177,7 +181,6 @@ export function InGameScreen({ onNextRound, onQuitToMenu }: InGameScreenProps) {
             </div>
           </div>
 
-          {/* Restored immediate routing - No artificial delay here! */}
           <motion.button onClick={onNextRound} whileHover={{ scale: 1.05, backgroundColor: "#1D9E75", boxShadow: "0 0 30px rgba(29, 158, 117, 0.5)" }} whileTap={{ scale: 0.95 }} className="w-full py-4 rounded-sm text-sm tracking-[4px] font-bold bg-[#0d2016] border-2 border-[#1D9E75] text-[#1D9E75] transition-all">
             END TURN
           </motion.button>

@@ -119,8 +119,11 @@ export default function BodyMap({ organs }: BodyMapProps) {
         <OrganHitbox cx="370" cy="500" r="85" organ={getOrgan("LUNGS")} />
         <OrganHitbox cx="630" cy="500" r="85" organ={getOrgan("LUNGS")} />
 
-        {/* Heart */}
-        <OrganHitbox cx="500" cy="620" r="60" organ={getOrgan("HEART")} />
+        {/* FIX: Heart moved up between Lungs */}
+        <OrganHitbox cx="500" cy="500" r="60" organ={getOrgan("HEART")} />
+
+        {/* FIX: Added missing Bloodstream node centrally below Heart/Lungs */}
+        <OrganHitbox cx="500" cy="680" r="70" organ={getOrgan("BLOODSTREAM")} />
 
         {/* Gut */}
         <OrganHitbox cx="500" cy="850" r="90" organ={getOrgan("GUT")} />
