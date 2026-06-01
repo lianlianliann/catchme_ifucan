@@ -146,11 +146,12 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
 
           if (pressure > 0) {
             zone.reclamationProgress += pressure;
+            
             if (zone.reclamationProgress >= RECLAMATION_THRESHOLD) {
               zone.isInfected            = false;
               zone.reclamationProgress   = 0;
               zone.activeDefenseCount    = Math.ceil(zone.activeDefenseCount * 0.5);
-              next.infectionRate         = Math.max(0, next.infectionRate - ZONE_INFECTION_WEIGHT[zoneName]);
+              
               turnNarratives.push(`[RECLAIMED] Sustained immune pressure cleared the ${zoneName}! Remaining cells transition to resident memory.`);
             }
           } else {
@@ -159,8 +160,8 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         }
       });
 
-      const remainingInfected = Object.values(next.organGraph.zones).filter(z => z.isInfected).length;
-      if (remainingInfected === 0) next.infectionRate = 0;
+      // FIX: Force sync the infection rate to the EXACT count of actual infected organs (Max 6)
+      next.infectionRate = Object.values(next.organGraph.zones).filter(z => z.isInfected).length;
 
       // ── Phase 8: Uncontested mutation severity penalty ────────────────────
       const mutationPenalty = decisionTree.calculateUncontestedSeverity(next, turnNarratives);
