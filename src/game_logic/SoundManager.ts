@@ -47,18 +47,39 @@ class SoundManager {
   public play(soundName: keyof typeof this.sounds, volume: number = 1.0) {
     const audio = this.sounds[soundName];
     if (audio) {
-      // Do not reset currentTime for looping background tracks to prevent stuttering
       if (!audio.loop) {
-        audio.currentTime = 0;
+        audio.currentTime = 0; // Reset lang kung hindi background music
       }
       audio.volume = volume;
-      audio
-        .play()
-        .catch((err) => console.warn("Audio playback prevented:", err));
+      const playPromise = audio.play();
+
+      // Ayusin ang Browser Autoplay Block (Bugs sa Menu & InGame BG)
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.warn(
+            `Autoplay blocked for ${soundName}. Waiting for interaction.`,
+            err,
+          );
+          // Magpi-play agad ang music sa unang click mo sa screen
+          const resumeAudio = () => {
+            audio.play();
+            document.removeEventListener("click", resumeAudio);
+          };
+          document.addEventListener("click", resumeAudio);
+        });
+      }
     }
   }
 
-  // Stop a specified sound effect
+  // Pause audio without resetting time (Para sa Pause Menu)
+  public pause(soundName: keyof typeof this.sounds) {
+    const audio = this.sounds[soundName];
+    if (audio) {
+      audio.pause();
+    }
+  }
+
+  // Stop a specified sound effect (Reset to 0)
   public stop(soundName: keyof typeof this.sounds) {
     const audio = this.sounds[soundName];
     if (audio) {

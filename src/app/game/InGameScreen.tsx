@@ -91,7 +91,29 @@ export function InGameScreen({ onNextRound, onQuitToMenu }: InGameScreenProps) {
 
     return () => clearTimeout(t1);
   }, []);
+  // Track kung walang nakaharang na pause menu o popups
+  const isGameActive =
+    !showPause &&
+    !showSettings &&
+    !showStartPopup &&
+    !mutationPopup &&
+    !showRoundBanner &&
+    !isLogMaximized;
 
+  useEffect(() => {
+    if (isGameActive) {
+      soundManager.play("inGame", 0.6); // Nilakasan ko nang konti to 0.6 para rinig mo agad
+    } else {
+      soundManager.pause("inGame"); // I-pause para hindi umulit from the top pagbalik
+      soundManager.stop("crisis"); // Patayin agad ang heartbeat pag naka-pause
+    }
+
+    // Kapag umalis sa InGameScreen papuntang Main Menu
+    return () => {
+      soundManager.stop("inGame");
+      soundManager.stop("crisis");
+    };
+  }, [isGameActive]); // Magre-react ito tuwing magpa-pause/unpause ka
   // ── Dominant defense warning ──────────────────────────────────────────────
   // Shows when the same defense has been top-scored ≥2 consecutive rounds
   const dominantWarning: string | null = (() => {
@@ -375,7 +397,7 @@ export function InGameScreen({ onNextRound, onQuitToMenu }: InGameScreenProps) {
         {/* ── CENTER ─────────────────────────────────────────────────────── */}
         <div className="flex-1 flex flex-col gap-4">
           <div className="flex-1 flex items-center justify-center border-2 border-[#1a3a2a] rounded-sm bg-[#0a1f12] bg-opacity-30 relative p-4 overflow-hidden">
-            <BodyMap organs={mappedOrgansForBodyMap} />
+            <BodyMap organs={mappedOrgansForBodyMap} isActive={isGameActive} />
           </div>
 
           {/* Terminal log */}

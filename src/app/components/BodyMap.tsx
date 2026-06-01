@@ -10,9 +10,10 @@ interface Organ {
 
 interface BodyMapProps {
   organs: Organ[];
+  isActive?: boolean;
 }
 
-export default function BodyMap({ organs }: BodyMapProps) {
+export default function BodyMap({ organs, isActive = true }: BodyMapProps) {
   // Safe lookup for the organ data
   const getOrgan = (name: string) => {
     return organs.find((o) => o.name === name) || { name, infection: 0 };
@@ -79,6 +80,12 @@ export default function BodyMap({ organs }: BodyMapProps) {
     );
   };
   useEffect(() => {
+    // Patayin agad at huwag magpatuloy kung hindi active ang game (naka-pause, popup, etc.)
+    if (!isActive) {
+      soundManager.stop("crisis");
+      return;
+    }
+
     let currentLevel: InfectionLevel = "green";
 
     for (const organ of organs) {
@@ -91,7 +98,7 @@ export default function BodyMap({ organs }: BodyMapProps) {
     }
 
     soundManager.updateCrisisLevel(currentLevel);
-  }, [organs]);
+  }, [organs, isActive]); // Idagdag ang isActive sa array
 
   return (
     <div className="relative w-full max-w-2xl mx-auto">
