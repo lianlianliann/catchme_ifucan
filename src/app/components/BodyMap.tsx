@@ -108,21 +108,24 @@ export default function BodyMap({ organs }: BodyMapProps) {
           </radialGradient>
         </defs>
 
-        {/* Brain */}
+        {/* 1. Brain */}
         <OrganHitbox cx="500" cy="160" r="90" organ={getOrgan("BRAIN")} />
 
-        {/* Lymph Nodes (Left & Right share the same data) */}
+        {/* 2 & 3. Lymph Nodes (Left & Right share the same data) */}
         <OrganHitbox cx="410" cy="340" r="45" organ={getOrgan("LYMPH NODES")} />
         <OrganHitbox cx="590" cy="340" r="45" organ={getOrgan("LYMPH NODES")} />
 
-        {/* Lungs (Left & Right share the same data) */}
+        {/* 4 & 5. Lungs (Left & Right share the same data) */}
         <OrganHitbox cx="370" cy="500" r="85" organ={getOrgan("LUNGS")} />
         <OrganHitbox cx="630" cy="500" r="85" organ={getOrgan("LUNGS")} />
 
-        {/* Heart */}
-        <OrganHitbox cx="500" cy="620" r="60" organ={getOrgan("HEART")} />
+        {/* 6. Heart (Aligned properly between lungs) */}
+        <OrganHitbox cx="500" cy="500" r="60" organ={getOrgan("HEART")} />
 
-        {/* Gut */}
+        {/* 7. Bloodstream (Added missing node, center-lower torso) */}
+        <OrganHitbox cx="500" cy="680" r="70" organ={getOrgan("BLOODSTREAM")} />
+
+        {/* 8. Gut */}
         <OrganHitbox cx="500" cy="850" r="90" organ={getOrgan("GUT")} />
       </svg>
     </div>

@@ -98,12 +98,12 @@ export function InGameScreen({ onNextRound, onQuitToMenu }: InGameScreenProps) {
   })();
 
   const actions = [
-    { id: 'WhiteBloodCells', name: 'White Blood Cell',   description: 'Deploy immune cells to patrol the zone',           color: '#1D9E75' },
-    { id: 'Antibodies',      name: 'Antibody Production',description: 'Target specific viral strains',                    color: '#1D9E75' },
-    { id: 'Inflammation',    name: 'Inflammation',        description: 'Quarantine the zone (causes minor host damage)',   color: '#EF9F27' },
-    { id: 'FeverResponse',   name: 'Fever Response',      description: 'Global viral slowdown for two rounds',             color: '#EF9F27' },
-    { id: 'MemoryCells',     name: 'Memory Cells',        description: 'Counter previously seen mutations rapidly',        color: '#1D9E75' },
-    { id: 'CytokineBurst',   name: 'Cytokine Burst',      description: 'Massive damage (+10% Severity penalty)',           color: '#E24B4A' },
+    { id: 'WhiteBloodCells', name: 'White Blood Cell',   description: 'Deploy immune cells to patrol the zone',            color: '#1D9E75' },
+    { id: 'Antibodies',      name: 'Antibody Production',description: 'Target specific viral strains',                     color: '#1D9E75' },
+    { id: 'Inflammation',    name: 'Inflammation',       description: 'Quarantine the zone (causes minor host damage)',    color: '#EF9F27' },
+    { id: 'FeverResponse',   name: 'Fever Response',     description: 'Global viral slowdown for two rounds',              color: '#EF9F27' },
+    { id: 'MemoryCells',     name: 'Memory Cells',       description: 'Counter previously seen mutations rapidly',         color: '#1D9E75' },
+    { id: 'CytokineBurst',   name: 'Cytokine Burst',     description: 'Massive damage (+10% Severity penalty)',            color: '#E24B4A' },
   ];
 
   // Per-action: is this action the recommended counter for any active mutation?
@@ -125,8 +125,14 @@ export function InGameScreen({ onNextRound, onQuitToMenu }: InGameScreenProps) {
       const cureProgress = (organ.reclamationProgress / RECLAMATION_THRESHOLD) * 100;
       infectionPercentage = Math.max(1, 100 - cureProgress);
     }
+    
+    let displayName = organ.name.toUpperCase();
+    if (organ.name === 'LymphNodes') {
+      displayName = 'LYMPH NODES';
+    }
+
     return {
-      name: organ.name.toUpperCase(),
+      name: displayName,
       infection: Math.round(infectionPercentage),
     };
   });
