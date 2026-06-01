@@ -1,5 +1,7 @@
 import { motion } from "motion/react";
 import BodyImage from "../../imports/Body.png";
+import { useEffect } from "react";
+import { soundManager, InfectionLevel } from "../../game_logic/SoundManager";
 
 interface Organ {
   name: string;
@@ -76,6 +78,20 @@ export default function BodyMap({ organs }: BodyMapProps) {
       </g>
     );
   };
+  useEffect(() => {
+    let currentLevel: InfectionLevel = "green";
+
+    for (const organ of organs) {
+      if (organ.infection >= 66) {
+        currentLevel = "red";
+        break; // Highest severity found, halt loop
+      } else if (organ.infection > 0) {
+        currentLevel = "yellow";
+      }
+    }
+
+    soundManager.updateCrisisLevel(currentLevel);
+  }, [organs]);
 
   return (
     <div className="relative w-full max-w-2xl mx-auto">
@@ -120,7 +136,7 @@ export default function BodyMap({ organs }: BodyMapProps) {
         <OrganHitbox cx="630" cy="500" r="85" organ={getOrgan("LUNGS")} />
 
         {/* Heart */}
-        <OrganHitbox cx="500" cy="620" r="60" organ={getOrgan("HEART")} />
+        <OrganHitbox cx="500" cy="490" r="35" organ={getOrgan("HEART")} />
 
         {/* Gut */}
         <OrganHitbox cx="500" cy="850" r="90" organ={getOrgan("GUT")} />
