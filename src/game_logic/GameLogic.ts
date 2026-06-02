@@ -18,6 +18,8 @@ export interface OrganZone {
   isInfected: boolean;
   epGeneration: number;
   reclamationProgress: number;
+  infectionAge: number; // NEW: Tracks Viral Entrenchment
+  isNecrotic: boolean;  // NEW: Tracks Organ Necrosis
 }
 
 export interface OrganGraph {
@@ -29,6 +31,13 @@ export type DifficultyMode = 'Casual' | 'Epidemic' | 'Pandemic';
 
 // ─── Zone Reclamation Constants ───────────────────────────────────────────────
 export const RECLAMATION_THRESHOLD = 10;
+
+// --- 2. Add the Necrosis Constants  ---
+export const NECROSIS_THRESHOLD: Record<DifficultyMode, number> = {
+  Casual: 8,
+  Epidemic: 6,
+  Pandemic: 4, // Faster necrosis on higher difficulties
+};
 
 export const ZONE_RESISTANCE: Record<string, number> = {
   Lungs:       2,
@@ -48,6 +57,12 @@ export const ZONE_INFECTION_WEIGHT: Record<string, number> = {
   Brain:       3,
 };
 
+export function getEffectiveResistance(zone: OrganZone, baseName: string): number {
+  const base = ZONE_RESISTANCE[baseName] || 3;
+  // Entrenchment: Resistance increases the longer the infection sits
+  const entrenchmentBonus = Math.floor(zone.infectionAge / 2);
+  return base + entrenchmentBonus;
+}
 // ─── Canonical EP costs ───────────────────────────────────────────────────────
 export const DEFENSE_EP_COSTS: Record<string, number> = {
   WhiteBloodCells: 10,
@@ -117,7 +132,7 @@ export interface DifficultySettings {
 export const DIFFICULTY_SETTINGS: Record<DifficultyMode, DifficultySettings> = {
   Casual: {
     minimaxDepth:          2,
-    bfsSpreadThreshold:    2,
+    bfsSpreadThreshold:    3,
     epPerHealthyOrgan:     5,
     startingInfectionZones: 1,
     telegraphMutations:    true,
@@ -128,7 +143,7 @@ export const DIFFICULTY_SETTINGS: Record<DifficultyMode, DifficultySettings> = {
   },
   Epidemic: {
     minimaxDepth:          4,
-    bfsSpreadThreshold:    3,
+    bfsSpreadThreshold:    4,
     epPerHealthyOrgan:     4,
     startingInfectionZones: 2,
     telegraphMutations:    false,
@@ -198,14 +213,14 @@ export function computeProjectedEp(state: GameState): number {
 export function buildInitialState(difficulty: DifficultyMode): GameState {
   const settings = DIFFICULTY_SETTINGS[difficulty];
   const organGraph: OrganGraph = {
-    zones: {
-      Lungs:       { name: 'Lungs',       epGeneration: 5,  activeDefenseCount: 0, isInfected: false, reclamationProgress: 0 },
-      Bloodstream: { name: 'Bloodstream', epGeneration: 10, activeDefenseCount: 0, isInfected: false, reclamationProgress: 0 },
-      LymphNodes:  { name: 'LymphNodes',  epGeneration: 15, activeDefenseCount: 0, isInfected: false, reclamationProgress: 0 },
-      Gut:         { name: 'Gut',         epGeneration: 8,  activeDefenseCount: 0, isInfected: false, reclamationProgress: 0 },
-      Heart:       { name: 'Heart',       epGeneration: 6,  activeDefenseCount: 0, isInfected: false, reclamationProgress: 0 },
-      Brain:       { name: 'Brain',       epGeneration: 3,  activeDefenseCount: 0, isInfected: false, reclamationProgress: 0 },
-    },
+  zones: {
+    Lungs:       { name: 'Lungs',       epGeneration: 5,  activeDefenseCount: 0, isInfected: false, reclamationProgress: 0, infectionAge: 0, isNecrotic: false },
+    Bloodstream: { name: 'Bloodstream', epGeneration: 10, activeDefenseCount: 0, isInfected: false, reclamationProgress: 0, infectionAge: 0, isNecrotic: false },
+    LymphNodes:  { name: 'LymphNodes',  epGeneration: 15, activeDefenseCount: 0, isInfected: false, reclamationProgress: 0, infectionAge: 0, isNecrotic: false },
+    Gut:         { name: 'Gut',         epGeneration: 8,  activeDefenseCount: 0, isInfected: false, reclamationProgress: 0, infectionAge: 0, isNecrotic: false },
+    Heart:       { name: 'Heart',       epGeneration: 6,  activeDefenseCount: 0, isInfected: false, reclamationProgress: 0, infectionAge: 0, isNecrotic: false },
+    Brain:       { name: 'Brain',       epGeneration: 3,  activeDefenseCount: 0, isInfected: false, reclamationProgress: 0, infectionAge: 0, isNecrotic: false },
+  },
     adjacencyList: {
       Lungs:       ['Bloodstream', 'LymphNodes'],
       Bloodstream: ['Lungs', 'Heart', 'LymphNodes', 'Gut'],

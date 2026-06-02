@@ -11,6 +11,8 @@ import {
   ZONE_INFECTION_WEIGHT,
   RECLAMATION_THRESHOLD,
   computeProjectedEp,
+  NECROSIS_THRESHOLD,       
+  getEffectiveResistance,
 } from '../game_logic/GameLogic';
 import { VirusAI }                from '../game_logic/VirusAI';
 import { VirusRL }                from '../game_logic/VirusRL';
@@ -112,7 +114,7 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
       // ── Phase 2: EP income ────────────────────────────────────────────────
       const healthyOrgans   = Object.values(next.organGraph.zones).filter(z => !z.isInfected);
       const organEpGained   = healthyOrgans.reduce((t, z) => t + z.epGeneration, 0);
-      const baseMetabolism  = 10;
+      const baseMetabolism  = 8;
       const totalEpGained   = organEpGained + baseMetabolism;
       next.playerEp        += totalEpGained;
 
@@ -137,25 +139,45 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         turnNarratives.push(` -> Effect Profile: ${functionalDesc}`);
       }
 
-      // ── Phase 7: Zone Reclamation ─────────────────────────────────────────
-      Object.entries(next.organGraph.zones).forEach(([zoneName, zone]) => {
-        if (zone.isInfected) {
-          const defense    = zone.activeDefenseCount;
-          const resistance = ZONE_RESISTANCE[zoneName];
-          const pressure   = defense - resistance;
+      // --- Phase 6.5: Necrosis Check & Viral Entrenchment ---
+      Object.values(next.organGraph.zones).forEach((zone) => {
+        if (zone.isInfected && !zone.isNecrotic) {
+          zone.infectionAge += 1; // Tick up entrenchment
 
-          if (pressure > 0) {
-            zone.reclamationProgress += pressure;
-            
-            if (zone.reclamationProgress >= RECLAMATION_THRESHOLD) {
-              zone.isInfected            = false;
-              zone.reclamationProgress   = 0;
-              zone.activeDefenseCount    = Math.ceil(zone.activeDefenseCount * 0.5);
+          // Check for necrosis threshold
+          if (zone.infectionAge >= NECROSIS_THRESHOLD[next.difficulty]) {
+            zone.isNecrotic = true;
+            zone.epGeneration = 0; // Organ stops producing EP
+            next.severityIndex += 15; // Massive immediate penalty
+            next.logFeed.push(`🚨 CRITICAL: ${zone.name} has gone NECROTIC! EP generation permanently lost. Systemic shock!`);
+          }
+        } else if (zone.isNecrotic) {
+          // Phase 6.5b: Necrotic Bleed
+          next.severityIndex += 2;
+          next.logFeed.push(`⚠️ NECROSIS: ${zone.name} tissue death causes systemic failure (+2% Severity).`);
+        }
+      });
+
+      // --- Phase 7: Zone Reclamation ---
+      Object.values(next.organGraph.zones).forEach((zone) => {
+        if (zone.isInfected) {
+          // GUARD: Cannot reclaim necrotic tissue
+          if (zone.isNecrotic) {
+            return; 
+          }
+
+          // UPDATE: Use dynamic resistance instead of static ZONE_RESISTANCE
+          const effectiveRes = getEffectiveResistance(zone, zone.name);
+          
+          if (zone.activeDefenseCount >= effectiveRes) {
+              zone.reclamationProgress += 1;
               
-              turnNarratives.push(`[RECLAIMED] Sustained immune pressure cleared the ${zoneName}! Remaining cells transition to resident memory.`);
-            }
-          } else {
-            zone.reclamationProgress = Math.max(0, zone.reclamationProgress + pressure - 1);
+              if (zone.reclamationProgress >= RECLAMATION_THRESHOLD) {
+                  zone.isInfected = false;
+                  zone.reclamationProgress = 0;
+                  zone.activeDefenseCount = 0;
+                  turnNarratives.push(`[RECOVERY] ${zone.name} successfully reclaimed by immune system!`);
+              }
           }
         }
       });
