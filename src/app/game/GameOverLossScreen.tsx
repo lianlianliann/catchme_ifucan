@@ -1,10 +1,16 @@
 import { motion } from "motion/react";
+import { useEffect } from "react";
+import { soundManager } from "../../game_logic/SoundManager";
 
 interface GameOverLossScreenProps {
   onRestart: () => void;
 }
 
 export function GameOverLossScreen({ onRestart }: GameOverLossScreenProps) {
+  useEffect(() => {
+    soundManager.play("lose");
+  }, []);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -22,8 +28,20 @@ export function GameOverLossScreen({ onRestart }: GameOverLossScreenProps) {
       {/* Hexagonal background */}
       <div className="absolute inset-0 opacity-5">
         <svg className="w-full h-full">
-          <pattern id="hex-loss" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-            <polygon points="20,0 30,10 30,30 20,40 10,30 10,10" fill="none" stroke="#E24B4A" strokeWidth="0.5" />
+          <pattern
+            id="hex-loss"
+            x="0"
+            y="0"
+            width="40"
+            height="40"
+            patternUnits="userSpaceOnUse"
+          >
+            <polygon
+              points="20,0 30,10 30,30 20,40 10,30 10,10"
+              fill="none"
+              stroke="#E24B4A"
+              strokeWidth="0.5"
+            />
           </pattern>
           <rect width="100%" height="100%" fill="url(#hex-loss)" />
         </svg>
@@ -39,7 +57,9 @@ export function GameOverLossScreen({ onRestart }: GameOverLossScreenProps) {
         <div className="w-64 h-64 rounded-full border-4 border-[#E24B4A] flex items-center justify-center">
           <div className="w-52 h-52 rounded-full bg-[#1a0505] border-2 border-[#E24B4A] flex flex-col items-center justify-center">
             <div className="text-[#E24B4A] text-lg tracking-[2px]">HOST</div>
-            <div className="text-[#E24B4A] text-lg tracking-[2px]">COMPROMISED</div>
+            <div className="text-[#E24B4A] text-lg tracking-[2px]">
+              COMPROMISED
+            </div>
           </div>
         </div>
       </motion.div>
@@ -51,7 +71,9 @@ export function GameOverLossScreen({ onRestart }: GameOverLossScreenProps) {
         transition={{ delay: 0.3 }}
         className="text-center mb-12 z-10"
       >
-        <h1 className="text-white text-8xl font-bold mb-4 tracking-wide">GAME OVER</h1>
+        <h1 className="text-white text-8xl font-bold mb-4 tracking-wide">
+          GAME OVER
+        </h1>
         <div className="text-[#E24B4A] text-lg">SEVERITY REACHED 100%</div>
       </motion.div>
 
@@ -60,11 +82,14 @@ export function GameOverLossScreen({ onRestart }: GameOverLossScreenProps) {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.5 }}
-        onClick={onRestart}
+        onClick={() => {
+          soundManager.play("button");
+          onRestart();
+        }}
         whileHover={{
           scale: 1.05,
           boxShadow: "0 0 30px rgba(226, 75, 74, 0.5)",
-          backgroundColor: "#E24B4A"
+          backgroundColor: "#E24B4A",
         }}
         whileTap={{ scale: 0.95 }}
         className="border-2 border-[#E24B4A] text-[#E24B4A] px-16 py-4 rounded-sm text-sm tracking-[6px] font-bold transition-colors z-10"

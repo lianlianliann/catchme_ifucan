@@ -1,5 +1,7 @@
 import { motion } from "motion/react";
 import BodyImage from "../../imports/Body.png";
+import { useEffect } from "react";
+import { soundManager, InfectionLevel } from "../../game_logic/SoundManager";
 
 interface Organ {
   name: string;
@@ -8,9 +10,10 @@ interface Organ {
 
 interface BodyMapProps {
   organs: Organ[];
+  isActive?: boolean;
 }
 
-export default function BodyMap({ organs }: BodyMapProps) {
+export default function BodyMap({ organs, isActive = true }: BodyMapProps) {
   // Safe lookup for the organ data
   const getOrgan = (name: string) => {
     return organs.find((o) => o.name === name) || { name, infection: 0 };
@@ -76,6 +79,26 @@ export default function BodyMap({ organs }: BodyMapProps) {
       </g>
     );
   };
+  useEffect(() => {
+    // Patayin agad at huwag magpatuloy kung hindi active ang game (naka-pause, popup, etc.)
+    if (!isActive) {
+      soundManager.stop("crisis");
+      return;
+    }
+
+    let currentLevel: InfectionLevel = "green";
+
+    for (const organ of organs) {
+      if (organ.infection >= 66) {
+        currentLevel = "red";
+        break; // Highest severity found, halt loop
+      } else if (organ.infection > 0) {
+        currentLevel = "yellow";
+      }
+    }
+
+    soundManager.updateCrisisLevel(currentLevel);
+  }, [organs, isActive]); // Idagdag ang isActive sa array
 
   return (
     <div className="relative w-full max-w-2xl mx-auto">
