@@ -137,20 +137,29 @@ export class DecisionTree {
   }
 
   public calculateUncontestedSeverity(state: GameState, narratives: string[]): number {
-    let penalty = 0;
     const counters = DecisionTree.MutationCounters;
-
-    state.activeMutations.forEach(mutation => {
+    
+    // First, isolate only the mutations that are actually unchecked this round
+    const uncontestedMutations = state.activeMutations.filter(mutation => {
       const counter = counters[mutation];
-      if (!counter) return;
-
+      if (!counter) return false;
       const contested = state.playerDefenses[counter] !== undefined && state.playerDefenses[counter] > 0;
-      if (!contested) {
-        penalty += 3;
-        const shortName = mutation.replace('_Mutation', '').replace(/_/g, ' ');
-        narratives.push(` -> [UNCONTESTED] "${shortName}" left unchecked! +3% Severity added to baseline.`);
-      }
+      return !contested;
     });
+
+    if (uncontestedMutations.length === 0) return 0;
+
+    // Apply exponential backpressure based on the number of stacked uncontested mutations
+    const penalty = uncontestedMutations.reduce((total, mutation, index) => {
+      // Base penalty of 3, multiplied by 1.4^index
+      const compoundedPenalty = 3 * Math.pow(1.4, index);
+      const shortName = mutation.replace('_Mutation', '').replace(/_/g, ' ');
+      
+      const displayPenalty = compoundedPenalty.toFixed(1);
+      narratives.push(` -> [UNCONTESTED] "${shortName}" left unchecked! +${displayPenalty}% Severity (Cascading).`);
+      
+      return total + compoundedPenalty;
+    }, 0);
 
     return penalty;
   }
